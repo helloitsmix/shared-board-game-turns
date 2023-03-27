@@ -38,9 +38,10 @@ wss.on('connection', ws => {
 
   // Send the number of connected clients to all clients
   for (let [clientWS] of clients) {
-    clientWS.send(JSON.stringify({
+    let payload = {
       numClients: clients.size
-    }))
+    }
+    clientWS.send(JSON.stringify(payload))
   }
 
   ws.on('message', (message) => {
@@ -56,6 +57,14 @@ wss.on('connection', ws => {
       const metadata = clients.get(ws)
       metadata.name = data.name
       metadata.isMaster = data.isMaster
+
+      for (let [clientWS] of clients) {
+        let payload = {
+          connection: metadata.name,
+          connected: true
+        }
+        clientWS.send(JSON.stringify(payload))
+      }
     }
 
     if (['finish-turn'].includes(action)) {
@@ -81,7 +90,8 @@ wss.on('connection', ws => {
       currentTurn = 0
 
       for (let [clientWS, metadata] of clients) {
-        arrayOfClients.push(metadata)
+        if (metadata.name)
+          arrayOfClients.push(metadata)
       }
 
       arrayOfClients = shuffle(arrayOfClients)
@@ -102,13 +112,17 @@ wss.on('connection', ws => {
 
   // Handle WebSocket disconnections
   ws.on('close', () => {
+    const metadata = clients.get(ws)
     clients.delete(ws)
 
     // Send the updated number of connected clients to all clients
     for (let [clientWS] of clients) {
-      clientWS.send(JSON.stringify({
-        numClients: clients.size
-      }))
+      let payload = {
+        numClients: clients.size,
+        connection: metadata.name,
+        connected: false
+      }
+      clientWS.send(JSON.stringify(payload))
     }
   })
 

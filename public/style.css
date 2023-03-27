@@ -29,7 +29,7 @@ html, body {
 }
 
 .navbar {
-  background-color: #584a2f;
+  background-color: #313131;
   color: white;
   height: 3.75rem;
   padding: 0 1rem;
@@ -49,15 +49,13 @@ html, body {
   display: flex;
   flex-direction: column;
 
-  margin-left: 1rem;
-  padding-right: 1rem;
+  margin: 1rem;
   overflow: auto;
 }
 
 .insert-player {
   display: flex;
   flex-direction: row;
-  margin-top: 1rem;
 }
 
 .insert-player-name {
@@ -78,18 +76,46 @@ html, body {
 
 #turn-list {
   flex: 1;
+  overflow: auto;
+}
+
+.list-name {
+  padding: 1rem 1.6rem;
+  /* padding-left: 25px; */
+  font-size: 1.3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon {
+  width: 30px;
+  height: 25px;
+  display: inline-block;
+  color: #AAAAAA;
+}
+
+.number {
+  color: #AAAAAA;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+.dungeon .number {
+  color: #FF4141;
+  font-weight: bold;
 }
 
 .btn-menu-container {
   display: flex;
   flex-direction: row;
-  margin: 0 1rem;
+  margin: 1rem;
   gap: 1rem;
 }
 
 .btn-menu-container .btn-menu {
   padding: 1rem 0.8rem;
-  margin-bottom: 1rem;
   box-sizing: border-box;
   border: 0.2rem solid #AAAAAA;
   border-radius: 0.5rem;
@@ -105,8 +131,19 @@ html, body {
   align-items: center;
 }
 
+.connected {
+  font-size: 0.8rem;
+  padding: 0.2rem 1.2rem 0 1.2rem;
+  color: #AAA;
+  font-style: italic;
+}
+
 .highlighted {
-  background-color: #f7bb40;
+  background-color: #FFD072;
+}
+
+.dungeon.highlighted {
+  background-color: #FFCCCC;
 }
 
 .dungeon {
@@ -123,8 +160,7 @@ html, body {
   display: none !important;
 }
 
-/* f7bb40 */
 .notify {
-  background-color: #f7bb40 !important;
-  color: #FFFFFF;
+  background-color: #FFD072 !important;
+  /* color: #FFFFFF; */
 }

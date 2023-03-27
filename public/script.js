@@ -1,6 +1,6 @@
 const socket = new WebSocket('ws://192.168.0.110:8080')
 const id = uuidv4()
-const dungeonNames = ['a', 'dungeon master', 'dungeonmaster', 'dungeon', 'master', 'dm', 'diego']
+const dungeonNames = ['dungeon master', 'dungeonmaster', 'dungeon', 'master', 'dm', 'diego']
 
 socket.onopen = function (e) {
   console.log("[open] Connessione stabilita", id)
@@ -22,9 +22,13 @@ socket.onmessage = event => {
 
   // Generate the list
   if (data.arrayOfClients) {
-    let html = data.arrayOfClients.map(client => `
-          <div class='list-name ${client.name === data.name ? 'bold' : ''} ${dungeonNames.includes(client.name.toLowerCase()) ? 'dungeon' : ''}'>
-            <span class='name'>${client.name}</span>
+    let html = data.arrayOfClients.map((client, index) => `
+          <div class='list-name ${client.name === data.name ? 'bold' : ''} ${dungeonNames.includes(client.name?.toLowerCase()) ? 'dungeon' : ''}'>
+            <div>
+              <div class='icon'>${client.name === data.name ? '<i class="fa-solid fa-play"></i>' : ''}</div>
+              <span class='name'>${client.name}</span>
+            </div>
+            <span class='number'>${index+1}</span>
           </div>`
     )
     document.querySelector('#turn-list').innerHTML = html.join('')
@@ -62,7 +66,19 @@ socket.onmessage = event => {
     if (['no-turns'].includes(data.notification))
       document.querySelector('#generate-turn').classList.add('notify')
   }
+
+  if (data.connection) {
+    const connectedPlayers = document.querySelector('#connected-players')
+    const id = `div-${data.connection}`
+    const timer = setTimeout(() => {
+      const div = document.querySelector(`#${id}`)
+      div.parentNode.removeChild(div)
+    }, 7000)
+    connectedPlayers.innerHTML = connectedPlayers.innerHTML + `<div class='connected' id='${id}'>${data.connection} si è ${data.connected ? 'connesso' : 'disconnesso'}</div>`
+  }
 }
+
+// const clearConnectedPlayers = 
 
 const generateTurn = document.querySelector('#generate-turn')
 generateTurn.addEventListener('click', () => {
@@ -80,7 +96,7 @@ finishTurn.classList.add('hide')
 const playerName = document.querySelector('.insert-player-name')
 playerName.addEventListener("keydown", (e) => {
   if (e.keyCode === 13 || e.keyCode === 9) {
-    const value = document.querySelector('#input-name').value
+    const value = document.querySelector('#input-name').value.trim()
     if (value) {
       console.log(value)
       if (dungeonNames.includes(value.toLowerCase())) {
