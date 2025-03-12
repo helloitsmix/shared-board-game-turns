@@ -2,7 +2,7 @@ const express = require('express')
 const app = express()
 const WebSocket = require('ws')
 const PORT = 3000
-const IP = "192.168.0.110"
+const IP = "192.168.1.105"
 
 // Serve the index.html file
 // app.get('/', function(req, res) {

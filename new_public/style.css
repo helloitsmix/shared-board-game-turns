@@ -21,12 +21,22 @@ html, body {
   color: #FF0000;
 }
 
-.container {
+.screen {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
 }
+
+.filler {
+  flex: 1;
+}
+
+/* .bottom {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+} */
 
 .navbar {
   background-color: #313131;
@@ -39,30 +49,29 @@ html, body {
   justify-content: space-between;
 }
 
-.navbar .title {
+.navbar .room-name {
   font-size: 1.8rem;
   font-weight: 800;
   /* padding: 0 1rem; */
 }
 
-#num-clients {
-  margin-right: 5px;
-}
-
-#insert-player-container {
+.inputs-container {
   display: flex;
   flex-direction: column;
-
-  margin: 1rem;
-  overflow: auto;
+  row-gap: 1rem;
+  padding: 1rem;
 }
 
-.insert-player {
+.input-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
-#username {
+.input-container span {
+  margin-left: 0.3rem;
+}
+
+.input {
   flex: 1;
   padding: 0.8rem 1rem;
 
@@ -72,43 +81,9 @@ html, body {
 
   font-size: 1.35rem;
   font-weight: 500;
-}
 
-.pressable {
-  cursor: pointer;
-}
-
-#turn-list {
-  flex: 1;
-  overflow: auto;
-}
-
-.list-name {
-  padding: 1rem 1.6rem;
-  /* padding-left: 25px; */
-  font-size: 1.3rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.icon {
-  width: 30px;
-  height: 25px;
-  display: inline-block;
-  color: #AAAAAA;
-}
-
-.number {
-  color: #AAAAAA;
-  font-size: 0.9rem;
-  font-weight: normal;
-}
-
-.dungeon .number {
-  color: #FF4141;
-  font-weight: bold;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .btn-menu-container {
@@ -135,6 +110,63 @@ html, body {
   align-items: center;
 }
 
+/* #num-clients {
+  margin-right: 5px;
+}
+
+#insert-player-container {
+  display: flex;
+  flex-direction: column;
+
+  margin: 1rem;
+  overflow: auto;
+}
+
+.insert-player {
+  display: flex;
+  flex-direction: row;
+}
+
+
+
+.pressable {
+  cursor: pointer;
+}
+
+#turn-list {
+  flex: 1;
+  overflow: auto;
+}
+
+.list-name {
+  padding: 1rem 1.6rem;
+  font-size: 1.3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.icon {
+  width: 30px;
+  height: 25px;
+  display: inline-block;
+  color: #AAAAAA;
+}
+
+.number {
+  color: #AAAAAA;
+  font-size: 0.9rem;
+  font-weight: normal;
+}
+
+.dungeon .number {
+  color: #FF4141;
+  font-weight: bold;
+}
+
+
+
 .connected {
   font-size: 0.8rem;
   padding: 0.2rem 1.2rem 0 1.2rem;
@@ -160,11 +192,9 @@ html, body {
 }
 
 .hide {
-  /* visibility: hidden; */
   display: none !important;
 }
 
 .notify {
   background-color: #FFD072 !important;
-  /* color: #FFFFFF; */
-}
+} */

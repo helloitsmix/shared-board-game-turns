@@ -1,4 +1,4 @@
-const socket = new WebSocket('ws://192.168.0.110:8080')
+const socket = new WebSocket('ws://192.168.1.105:8080')
 const id = uuidv4()
 const dungeonNames = ['dungeon master', 'dungeonmaster', 'dungeon', 'master', 'dm', 'diego']
 
