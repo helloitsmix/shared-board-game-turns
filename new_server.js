@@ -10,10 +10,17 @@ const wss = new WebSocket.Server({ server })
 // Mappa per tenere traccia degli utenti: deviceId => { username, ws, active, timeout }
 const users = new Map()
 
+const getUserState = (deviceId = '') => {
+  if (users.has(deviceId)) {
+    return users.get(deviceId)
+  }
+  return undefined
+}
+
 // Mappa per tenere lo stato dei turni per ogni stanza: room => { turnOrder, currentTurnIndex, turnsGenerated }
 const rooms = new Map()
 
-function getRoomState(room) {
+const getRoomState = (room = '') => {
   if (!rooms.has(room)) {
     rooms.set(room, {
       turnOrder: [],
@@ -24,7 +31,6 @@ function getRoomState(room) {
   return rooms.get(room)
 }
 
-// const defaultRoom = 'HEROQUEST'
 // 30 minuti in millisecondi
 const GRACE_PERIOD = 10000 // 30 * 60 * 1000
 
@@ -40,85 +46,76 @@ wss.on('connection', function connection(ws) {
       const data = JSON.parse(message)
       console.log('data on server:', data)
       if (data.type === 'login') {
-        // Il client invia:
-        // { type: 'login', username: 'Nome', deviceId: 'ID_univoco', admin: true/false, room: 'HEROQUEST' }
         ws.deviceId = data.deviceId
-        ws.room = data.room
-        // ws.username = data.username
-        ws.admin = data.admin
-
+        
         // Se l'utente esiste già (riconnessione) annulla il timer se presente
-        if (users.has(data.deviceId)) {
-          const existing = users.get(data.deviceId)
+        const existing = getUserState(data.deviceId)
+        if (existing) {
           if (existing.timeout) {
             clearTimeout(existing.timeout)
             existing.timeout = null
           }
-          existing.ws = ws
-          existing.active = true
           existing.username = data.username // Aggiorna il nome se è stato modificato
           existing.admin = data.admin       // Aggiorna il flag admin se è stato modificato
           existing.room = data.room
+          existing.active = true
+          existing.ws = ws
         } else {
           // Nuovo utente o utente che era stato rimosso definitivamente
           users.set(data.deviceId, {
             username: data.username,
             admin: data.admin,
             room: data.room,
-            ws: ws,
             active: true,
+            ws: ws,
             timeout: null
           })
         }
 
         // single update
-        broadcastLoginSuccessful(ws.deviceId)
+        broadcastLoginSuccessful(data.deviceId)
         // room update
-        broadcastUpdateRoom(ws.room)
-
-        let roomState = getRoomState(ws.room)
+        broadcastUpdateRoom(data.room)
+        // turn update (if started)
+        let roomState = getRoomState(data.room)
         if (roomState.turnsGenerated) {
           if (!roomState.turnOrder.includes(data.deviceId)) {
-            roomState.turnOrder.push(ws.deviceId)
+            roomState.turnOrder.push(data.deviceId)
           }
-          broadcastTurnOrder(ws.room)
+          broadcastTurnOrder(data.room)
         }
-        // if (roomState.turnsGenerated && !roomState.turnOrder.includes(data.deviceId)) {
-        //   roomState.turnOrder.push(data.deviceId)
-        // }
-        // broadcastTurnOrder(data.room)
       }
 
       // --- Gestione dei messaggi per il sistema di turni ---
 
       if (data.type === 'generate-turn') {
+        // user who asked to generate turns
+        const userState = getUserState(ws.deviceId) ?? {}
         // Solo gli admin possono generare i turni
-        console.log('ws', ws)
-        if (!ws.admin) return
-        const room = ws.room
+        if (!userState.admin) return
+        const room = userState.room
         let roomState = getRoomState(room)
         roomState.turnsGenerated = true
         // Raccogli tutti gli utenti della stanza
         let allUsers = []
         users.forEach((user, deviceId) => {
           if (user.room === room) {
-            allUsers.push({ deviceId, username: user.username, admin: user.admin, active: user.active })
+            allUsers.push(deviceId)
           }
         })
         // Shuffle casuale
-        allUsers.sort(() => Math.random() - 0.5)
-        roomState.turnOrder = allUsers.map(u => u.deviceId)
+        roomState.turnOrder = shuffle(allUsers)
         roomState.currentTurnIndex = 0
-        console.log('roomState', roomState)
         broadcastTurnOrder(room)
       }
 
       if (data.type === 'finish-turn') {
         // Solo l'utente corrente (oppure un admin) può terminare il turno
-        const room = ws.room
+        const userState = getUserState(ws.deviceId) ?? {}
+        const room = userState.room
         let roomState = getRoomState(room)
         // Solo l'utente corrente (o un admin) può terminare il turno
-        if (!ws.admin && roomState.turnOrder[roomState.currentTurnIndex] !== ws.deviceId) return
+        if (!userState.admin && roomState.turnOrder[roomState.currentTurnIndex] !== ws.deviceId) return
         if (roomState.currentTurnIndex < roomState.turnOrder.length - 1) {
           roomState.currentTurnIndex++
         }
@@ -126,9 +123,10 @@ wss.on('connection', function connection(ws) {
       }
 
       if (data.type === 'prev-turn') {
+        const userState = getUserState(ws.deviceId) ?? {}
         // Solo gli admin possono tornare indietro
-        if (!ws.admin) return
-        const room = ws.room
+        if (!userState.admin) return
+        const room = userState.room
         let roomState = getRoomState(room)
         if (roomState.currentTurnIndex > 0) {
           roomState.currentTurnIndex--
@@ -143,7 +141,7 @@ wss.on('connection', function connection(ws) {
 
   ws.on('close', function () {
     if (ws.deviceId) {
-      const user = users.get(ws.deviceId)
+      const user = getUserState(ws.deviceId)
       if (user) {
         // Segna l'utente come inattivo e imposta un timer di 30 minuti per la rimozione definitiva
         user.active = false
@@ -174,7 +172,7 @@ wss.on('connection', function connection(ws) {
 })
 
 const broadcastLoginSuccessful = (deviceId) => {
-  const user = users.get(deviceId)
+  const user = getUserState(deviceId)
   // let client = [...wss.clients].find(c => c.deviceId === deviceId)
   if (user) {
     let client = user.ws
@@ -202,9 +200,10 @@ function broadcastUpdateRoom(room) {
     }
   })
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN && client.room === room) {
+    const clientState = getUserState(client?.deviceId) ?? {}
+    if (client.readyState === WebSocket.OPEN && clientState.room === room) {
       clientSend(client, {
-        type: 'update-room',
+        type: 'room-update',
         connectedUsers: usersInRoom,
         count: usersInRoom.length
       })
@@ -219,11 +218,10 @@ const clientSend = (client, msg) => {
 
 // Funzione per inviare l'ordine dei turni a tutti i client
 function broadcastTurnOrder(room) {
-  console.log('broadcastTurnOrder')
   let roomState = getRoomState(room)
   if (!roomState.turnsGenerated) return
   const turnOrderData = roomState.turnOrder.reduce((prev, deviceId) => {
-    const user = users.get(deviceId)
+    const user = getUserState(deviceId)
     if (!user || user.room !== room) return prev
     return [...prev, {
       deviceId,
@@ -233,7 +231,8 @@ function broadcastTurnOrder(room) {
     }]
   }, [])
   wss.clients.forEach(client => {
-    if (client.readyState === WebSocket.OPEN && client.room === room) {
+    const clientState = getUserState(client?.deviceId) ?? {}
+    if (client.readyState === WebSocket.OPEN && clientState.room === room) {
       clientSend(client, {
         type: 'turn-update',
         turnOrder: turnOrderData,
@@ -246,3 +245,16 @@ function broadcastTurnOrder(room) {
 server.listen(CONFIG.PORT, CONFIG.IP, function () {
   console.log(`Server in ascolto su http://${CONFIG.IP}:${CONFIG.PORT}`)
 })
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex)
+    currentIndex--
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
+  }
+  return array
+}

@@ -25,7 +25,7 @@ fetch('/config')
     const savedRoom = localStorage.getItem('room') || ROOMS[0]
     select.value = savedRoom
   })
-  .catch(error => console.error('Errore nel caricamento della configurazione:', error))
+  .catch(error => console.log('Errore nel caricamento della configurazione:', error))
 
 // Recupera o genera un ID univoco per il dispositivo
 let deviceId = localStorage.getItem('deviceId')
@@ -61,7 +61,7 @@ function connect(username, admin, room) {
   ws = new WebSocket(`ws://${IP}:${PORT}`)
 
   ws.onopen = function () {
-    // Invia il messaggio di login al server includendo il flag admin
+    // Server login
     ws.send(JSON.stringify({
       type: 'login',
       deviceId,
@@ -69,7 +69,6 @@ function connect(username, admin, room) {
       admin,
       room
     }))
-    // ws.room = room
   }
 
   ws.onmessage = function (event) {
@@ -77,15 +76,15 @@ function connect(username, admin, room) {
     console.log('data', data)
 
     if (data.type === 'login-successful') {
-      textElement('.room-name', data.room)
-      displayElement('#screen-0', 'none')
-      displayElement('#screen-1')
+      setTextContent('.room-name', data.room)
+      setProperty('#screen-0', 'display', 'none')
+      setProperty('#screen-1', 'display', 'block')
       if (!data.admin) {
-        displayElement('.admin-ui', 'none')
+        setProperty('.admin-ui', 'display', 'none')
       }
     }
     
-    if (data.type === 'update-room') {
+    if (data.type === 'room-update') {
       // {
       //   "type": "update",
       //   "connectedUsers": [
@@ -99,7 +98,7 @@ function connect(username, admin, room) {
       //   "count": 1,
       //   "turnsGenerated": false
       // }
-      textElement('#num-clients', data.count)
+      setTextContent('#num-clients', data.count)
       const connectedPlayers = document.getElementById('connected-players')
       const list = data.connectedUsers.reduce((prev, u) => {
         return `${prev} <li>${u.username} (${!u.active ? 'offline' : 'online'}) ${u.admin ? '(admin)' : ''}</li>`
@@ -108,8 +107,8 @@ function connect(username, admin, room) {
     }
 
     if (data.type === 'turn-update') {
-      displayElement('#screen-1', 'none')
-      displayElement('#screen-2')
+      setProperty('#screen-1', 'display', 'none')
+      setProperty('#screen-2', 'display', 'block')
       // Aggiorna la visualizzazione della lista dei turni
       let html = ''
       data.turnOrder.forEach((user, index) => {
@@ -149,8 +148,8 @@ function connect(username, admin, room) {
   }
 
   ws.onerror = function (error) {
-    console.error('WebSocket error:', error)
-    document.querySelector('#error').textContent = `${error}`
+    console.log('WebSocket error:', error)
+    setTextContent('#error', typeof error === 'object' ? JSON.parse(error) : error)
   }
 }
 
@@ -167,12 +166,12 @@ document.getElementById('prev-turn').onclick = function () {
   ws.send(JSON.stringify({ type: 'prev-turn' }))
 }
 
-const textElement = (el = '', text = '') => {
+const setTextContent = (el = '', text = '') => {
   let elements = document.querySelectorAll(el) || []
   elements.forEach(elem => elem.textContent = text)
 }
 
-const displayElement = (el = '', display = 'block') => {
-  let elements = document.querySelectorAll(el) || []
-  elements.forEach(elem => elem.style.display = display)
+const setProperty = (selector = '', propertyName, value) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.style.setProperty(propertyName, value))
 }
