@@ -2,116 +2,115 @@
 <html>
 
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <!-- <link rel="shortcut icon" type="image/x-icon" href="./img/favicon.ico"> -->
-  <!-- <link rel="manifest" href="manifest.json"> -->
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <!-- <link rel='shortcut icon' type='image/x-icon' href='./img/favicon.ico'> -->
+  <!-- <link rel='manifest' href='manifest.json'> -->
   <title>Shared Board Game Turns</title>
-  <link rel="stylesheet" type="text/css" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"
-    integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel='stylesheet' type='text/css' href='style.css'>
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css'
+    integrity='sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=='
+    crossorigin='anonymous' referrerpolicy='no-referrer' />
+  <link rel='preconnect' href='https://fonts.googleapis.com'>
+  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+  <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap' rel='stylesheet'>
 </head>
 
 <body>
 
   <!-- LOGIN -->
-  <div id="screen-0" class="screen">
+  <div class='screen' data-screen-name='login'>
     
-    <div class="navbar"></div>
+    <div class='navbar'></div>
 
-    <div class="inputs-container">
-      <div class="input-container">
+    <div class='inputs-container'>
+      <div class='input-container'>
         <span>Room</span>
-        <select name="rooms" id="rooms" class="input">
-        </select>
+        <select id='rooms-input' class='input'></select>
       </div>
 
-      <div class="input-container">
+      <div class='input-container'>
         <span>Username</span>
-        <input type="text"
-               class="input"
-               minlength="1"
-               maxlength="10"
-               id="username"
-               name="username"
-               placeholder="Inserisci il tuo nome"
+        <input type='text'
+               class='input'
+               minlength='1'
+               maxlength='15'
+               id='username'
+               name='username'
+               placeholder='Inserisci il tuo nome'
                autofocus
-        >
+        />
       </div>
       
       <label>
-        <input type="checkbox" id="admin"> Admin
+        <input type='checkbox' id='admin'> Admin
       </label>
     </div>
 
-    <div class="filler"></div>
+    <div class='filler'></div>
 
-    <div class="btn-menu-container">
-      <button type="button" class="pressable btn-menu login-ui" id="connect-btn">
-        <i class="fa-solid fa-play"></i>
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='login'>
+        <i class='fa-solid fa-play'></i>
         <span>Connetti</span>
       </button>
     </div>
   </div>
 
   <!-- ROOM -->
-  <div id="screen-1" style="display: none;" class="screen">
-    <div class="navbar">
-      <span class="room-name">Room</span>
-      <div>
-        <span id="num-clients"></span>
-        <i class="fa-solid fa-user"></i>
+  <div class='screen' data-screen-name='room' style='display: none;'>
+    <div class='navbar'>
+      <span class='room-name' data-render='room-name'>Room</span>
+      <div class='room-users-count'>
+        <span data-render='room-users-count'></span>
+        <i class='fa-solid fa-user'></i>
       </div>
     </div>
 
-    <div id="users"></div>
-    <div id="connected-players"></div>
+    <div data-render='room-connected-users'></div>
+    <div class='filler'></div>
 
-    <div class="btn-menu-container">
-      <button type="button" class="pressable btn-menu admin-ui" id="generate-turn">
-        <i class="fa-solid fa-repeat"></i>
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
+        <i class='fa-solid fa-repeat'></i>
         <span>Genera turni</span>
       </button>
     </div>
   </div>
 
   <!-- TURNS -->
-  <div id="screen-2" style="display: none;" class="screen">
-    <div class="navbar">
-      <span class="room-name">Room</span>
-      <div>
-        <span id="num-clients"></span>
-        <i class="fa-solid fa-user"></i>
+  <div class='screen' data-screen-name='turns' style='display: none;'>
+    <div class='navbar'>
+      <span class='room-name' data-render='room-name'>Room</span>
+      <div class='room-users-count'>
+        <span data-render='room-users-count'></span>
+        <i class='fa-solid fa-user'></i>
       </div>
     </div>
     
-    <div id="turn-list"></div>
+    <div data-render='room-connected-users-turns-list'></div>
+    <div class='filler'></div>
 
-    <div class="btn-menu-container">
-      <!-- Nuovo pulsante per "Torna indietro" -->
-      <button type="button" class="pressable btn-menu admin-ui" id="prev-turn">
-        <i class="fa-solid fa-arrow-left"></i>
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
+        <i class='fa-solid fa-arrow-left'></i>
         <span>Torna indietro</span>
       </button>
-      <button type="button" class="pressable btn-menu admin-ui" id="finish-turn">
-        <i class="fa-solid fa-turn-down"></i>
+      <button type='button' data-btn-action='finish-turn' data-ui-type='admin'>
+        <i class='fa-solid fa-turn-down'></i>
         <span>Finisci turno</span>
       </button>
-      <button type="button" class="pressable btn-menu admin-ui" id="generate-turn">
-        <i class="fa-solid fa-repeat"></i>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
+        <i class='fa-solid fa-repeat'></i>
         <span>Rigenera turni</span>
       </button>
     </div>
   </div>
 
-  <div id="error"></div>
+  <div id='error'></div>
 
-  <script src="script.js"></script>
+  <script src='script.js'></script>
 
 </body>
 

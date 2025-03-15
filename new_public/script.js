@@ -3,7 +3,32 @@ let IP = '127.0.0.1'
 let PORT = 3000
 let ROOMS = ['Default']
 
-// Recupera la configurazione prima di connettersi
+// Utility functions
+const setTextContent = (selector, text = '') => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.textContent = text)
+}
+const setProperty = (selector, propertyName, value) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.style.setProperty(propertyName, value))
+}
+const removeProperty = (selector, propertyName, value) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.style.removeProperty(propertyName, value))
+}
+const setOnClick = (selector, fn = () => { }) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.onclick = fn)
+}
+const renderRoom = (selector, users) => {
+  const renderContainer = document.querySelector(selector)
+  const list = users.reduce((prev, u) => {
+    return `${prev} <li>${u.username} (${!u.active ? 'offline' : 'online'}) ${u.admin ? '(admin)' : ''}</li>`
+  }, '')
+  renderContainer.innerHTML = `<ul>${list}</ul>`
+}
+
+// Fetch the configuration (IP, PORT, ROOMS)
 fetch('/config')
   .then(response => response.json())
   .then(config => {
@@ -11,10 +36,7 @@ fetch('/config')
     PORT = config.PORT
     ROOMS = config.ROOMS
 
-    // Ottieni l'elemento <select>
-    const select = document.getElementById('rooms')
-
-    // Cicla l'array e aggiungi le opzioni al <select>
+    const select = document.getElementById('rooms-input')
     ROOMS.forEach(room => {
       const option = document.createElement('option')
       option.value = room
@@ -27,23 +49,26 @@ fetch('/config')
   })
   .catch(error => console.log('Errore nel caricamento della configurazione:', error))
 
-// Recupera o genera un ID univoco per il dispositivo
+// Get the device ID or generate a new one
 let deviceId = localStorage.getItem('deviceId')
 if (!deviceId) {
   deviceId = Date.now()
   localStorage.setItem('deviceId', deviceId)
 }
 
+// Get elements from the DOM
 const usernameInput = document.getElementById('username')
 const adminCheckbox = document.getElementById('admin')
-const roomInput = document.getElementById('rooms')
+const roomInput = document.getElementById('rooms-input')
 const savedUsername = localStorage.getItem('username')
 const savedAdmin = localStorage.getItem('admin')
 
+// Populate the form with saved values
 usernameInput.value = savedUsername || ''
 adminCheckbox.checked = (savedAdmin === 'true')
 
-document.getElementById('connect-btn').onclick = function () {
+// Buttons event listeners
+setOnClick('[data-btn-action="login"]', () => {
   const username = usernameInput.value.trim()
   const admin = adminCheckbox.checked
   const room = roomInput.value || ROOMS[0]
@@ -55,123 +80,97 @@ document.getElementById('connect-btn').onclick = function () {
   localStorage.setItem('admin', admin)
   localStorage.setItem('room', room)
   connect(username, admin, room)
-}
+})
+setOnClick('[data-btn-action="generate-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'generate-turn' }))
+})
+setOnClick('[data-btn-action="finish-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'finish-turn' }))
+})
+setOnClick('[data-btn-action="prev-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'prev-turn' }))
+})
 
-function connect(username, admin, room) {
+function connect(_username, _admin, _room) {
   ws = new WebSocket(`ws://${IP}:${PORT}`)
 
   ws.onopen = function () {
-    // Server login
+    // # Login
     ws.send(JSON.stringify({
       type: 'login',
       deviceId,
-      username,
-      admin,
-      room
+      username: _username,
+      admin: _admin,
+      room: _room
     }))
   }
 
   ws.onmessage = function (event) {
-    const data = JSON.parse(event.data)
-    console.log('data', data)
 
-    if (data.type === 'login-successful') {
-      setTextContent('.room-name', data.room)
-      setProperty('#screen-0', 'display', 'none')
-      setProperty('#screen-1', 'display', 'block')
-      if (!data.admin) {
-        setProperty('.admin-ui', 'display', 'none')
+    // # Parse the incoming message
+    const parsed = JSON.parse(event.data)
+    const {
+      type: MSG_TYPE,
+      ...data
+    } = parsed
+    console.log('Incoming message from server:', parsed)
+
+    // # Login successful
+    if (MSG_TYPE === 'login-successful') {
+      const { room, admin } = data
+      setTextContent('[data-render="room-name"]', room)
+      setProperty('[data-screen-name="login"]', 'display', 'none')
+      removeProperty('[data-screen-name="room"]', 'display', 'none')
+      if (!admin) {
+        setProperty('[data-ui-type="admin"]', 'display', 'none')
       }
     }
-    
-    if (data.type === 'room-update') {
-      // {
-      //   "type": "update",
-      //   "connectedUsers": [
-      //     {
-      //       "deviceId": "1741627848664",
-      //       "username": "Minchia",
-      //       "admin": true,
-      //       "active": true
-      //     }
-      //   ],
-      //   "count": 1,
-      //   "turnsGenerated": false
-      // }
-      setTextContent('#num-clients', data.count)
-      const connectedPlayers = document.getElementById('connected-players')
-      const list = data.connectedUsers.reduce((prev, u) => {
-        return `${prev} <li>${u.username} (${!u.active ? 'offline' : 'online'}) ${u.admin ? '(admin)' : ''}</li>`
-      }, '')
-      connectedPlayers.innerHTML = `<ul>${list}</ul>`
+
+    // # Room update
+    if (MSG_TYPE === 'room-update') {
+      const { count, connectedUsers } = data
+      setTextContent('[data-render="room-users-count"]', count)
+      renderRoom('[data-render="room-connected-users"]', connectedUsers)
     }
 
-    if (data.type === 'turn-update') {
-      setProperty('#screen-1', 'display', 'none')
-      setProperty('#screen-2', 'display', 'block')
+    // # Turn update
+    if (MSG_TYPE === 'turn-update') {
+      const { turnOrder, currentTurnIndex } = data
+      const userTurn = turnOrder[currentTurnIndex] ?? {}
+      setProperty('[data-screen-name="room"]', 'display', 'none')
+      removeProperty('[data-screen-name="turns"]', 'display', 'none')
       // Aggiorna la visualizzazione della lista dei turni
       let html = ''
-      data.turnOrder.forEach((user, index) => {
-        if (index === data.currentTurnIndex) {
+      turnOrder.forEach((user, index) => {
+        if (index === currentTurnIndex) {
           html += `<div style='font-weight: bold'>${user.username}</div>`
         } else {
           html += `<div>${user.username}</div>`
         }
       })
-      document.getElementById('turn-list').innerHTML = html
+      document.querySelector('[data-render="room-connected-users-turns-list"]').innerHTML = html
 
-      // Gestione visibilità dei pulsanti in base al ruolo e al turno corrente
-      if (admin) {
-        // Gli admin vedono sempre tutti i tasti di controllo
-        document.getElementById('generate-turn').style.display = 'inline-block'
-        document.getElementById('finish-turn').style.display = 'inline-block'
-        document.getElementById('prev-turn').style.display = 'inline-block'
+      // If it's your turn or you're an admin, show the "Finish turn" button
+      if (_admin || userTurn.deviceId === deviceId) {
+        removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
       } else {
-        // I non-admin vedono 'Finisci turno' solo se è il loro turno
-        if (data.turnOrder[data.currentTurnIndex] && data.turnOrder[data.currentTurnIndex].deviceId === deviceId) {
-          document.getElementById('finish-turn').style.display = 'inline-block'
-        } else {
-          document.getElementById('finish-turn').style.display = 'none'
-        }
-        document.getElementById('generate-turn').style.display = 'none'
-        document.getElementById('prev-turn').style.display = 'none'
+        setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
       }
     }
   }
 
+  // # Reconnection attempt
   ws.onclose = function () {
     // In caso di disconnessione, tentiamo di riconnetterci dopo qualche secondo
     setTimeout(() => {
       console.log('Tentativo di riconnessione...')
-      connect(username, admin, room)
+      connect(_username, _admin, _room)
     }, 3000)
   }
 
+  // # Error handling
   ws.onerror = function (error) {
     console.log('WebSocket error:', error)
     setTextContent('#error', typeof error === 'object' ? JSON.parse(error) : error)
   }
-}
-
-// Event listener per i pulsanti dei turni
-document.getElementById('generate-turn').onclick = function () {
-  ws.send(JSON.stringify({ type: 'generate-turn' }))
-}
-
-document.getElementById('finish-turn').onclick = function () {
-  ws.send(JSON.stringify({ type: 'finish-turn' }))
-}
-
-document.getElementById('prev-turn').onclick = function () {
-  ws.send(JSON.stringify({ type: 'prev-turn' }))
-}
-
-const setTextContent = (el = '', text = '') => {
-  let elements = document.querySelectorAll(el) || []
-  elements.forEach(elem => elem.textContent = text)
-}
-
-const setProperty = (selector = '', propertyName, value) => {
-  let elements = document.querySelectorAll(selector) || []
-  elements.forEach(elem => elem.style.setProperty(propertyName, value))
 }
