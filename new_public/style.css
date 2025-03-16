@@ -21,8 +21,33 @@ button {
   cursor: pointer;
 }
 
-#error {
-  color: #FF0000;
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: white;
+  margin: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  /* text-align: center; */
+  min-width: 250px;
+  
+}
+
+.modal .modal-message {
+  padding: 1.2rem;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #FF3333;
 }
 
 .screen {
@@ -121,20 +146,51 @@ button {
   align-items: center;
   gap: 0.5rem;
 }
-/*
 
-#insert-player-container {
-  display: flex;
-  flex-direction: column;
-
-  margin: 1rem;
+.room-connected-users-list {
+  flex: 1;
   overflow: auto;
+  list-style: none;
+  padding: 0px;
+  margin: 0;
 }
 
-.insert-player {
+.room-connected-users-list li {
+  padding: 1rem;
+  font-size: 1.3rem;
   display: flex;
   flex-direction: row;
+  align-items: center;
+  gap: 0.8rem;
 }
+
+.room-connected-users-list li.highlight {
+  background-color: rgba(255, 229, 178, 0.75);
+}
+
+.room-connected-users-list li .position {
+  font-size: 0.8rem;
+  color: #AAAAAA;
+}
+
+.room-connected-users-list li .icon {
+  font-size: 0.8rem;
+}
+
+.room-connected-users-list li .status {
+  flex: 1;
+  text-align: right;
+}
+
+.room-connected-users-list li .status.online {
+  color: #00DD00;
+}
+.room-connected-users-list li .status.offline {
+  color: #DD0000;
+}
+
+
+/*
 
 #turn-list {
   flex: 1;

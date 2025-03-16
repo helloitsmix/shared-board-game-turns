@@ -8,8 +8,10 @@ const config = {
   ROOMS: [
     'HEROQUEST',
     'OTHER'
-  ]
+  ],
 
+  // Inactive 
+  GRACE_PERIOD: 10000 // 30 * 60 * 1000
 }
 
 module.exports = config

@@ -19,6 +19,21 @@
 
 <body>
 
+  <!-- MODAL MESSAGES -->
+  <div class='overlay' data-ui-type='modal' style='display: none;'>
+    <div class='modal'>
+      <div class='modal-message'>
+        <span data-render='modal-message'></span>
+      </div>
+      <div class='btn-menu-container'>
+        <button type='button' data-btn-action='close-modal'>
+          <!-- <i class='fa-solid fa-xmark'></i> -->
+          <span>Chiudi</span>
+        </button>
+      </div>
+    </div>
+  </div>  
+
   <!-- LOGIN -->
   <div class='screen' data-screen-name='login'>
     
@@ -68,8 +83,7 @@
       </div>
     </div>
 
-    <div data-render='room-connected-users'></div>
-    <div class='filler'></div>
+    <ul class='room-connected-users-list' data-render='room-connected-users'></ul>
 
     <div class='btn-menu-container'>
       <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
@@ -79,7 +93,7 @@
     </div>
   </div>
 
-  <!-- TURNS -->
+  <!-- TURNS (UNIRE CON ROOM??) -->
   <div class='screen' data-screen-name='turns' style='display: none;'>
     <div class='navbar'>
       <span class='room-name' data-render='room-name'>Room</span>
@@ -89,8 +103,7 @@
       </div>
     </div>
     
-    <div data-render='room-connected-users-turns-list'></div>
-    <div class='filler'></div>
+    <ul class='room-connected-users-list' data-render='room-turns-list'></ul>
 
     <div class='btn-menu-container'>
       <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
@@ -107,8 +120,6 @@
       </button>
     </div>
   </div>
-
-  <div id='error'></div>
 
   <script src='script.js'></script>
 

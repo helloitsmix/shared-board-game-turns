@@ -20,12 +20,28 @@ const setOnClick = (selector, fn = () => { }) => {
   let elements = document.querySelectorAll(selector) || []
   elements.forEach(elem => elem.onclick = fn)
 }
-const renderRoom = (selector, users) => {
+const openModal = (message) => {
+  removeProperty('[data-ui-type="modal"]', 'display', 'none')
+  setTextContent('[data-render="modal-message"]', message)
+}
+const renderUsersList = (selector, users, currentIndex) => {
   const renderContainer = document.querySelector(selector)
-  const list = users.reduce((prev, u) => {
-    return `${prev} <li>${u.username} (${!u.active ? 'offline' : 'online'}) ${u.admin ? '(admin)' : ''}</li>`
-  }, '')
-  renderContainer.innerHTML = `<ul>${list}</ul>`
+  const list = users.map((user, index) => {
+    const highlight = index === currentIndex ? 'class="highlight"' : ''
+    const position = `<span class="position">${index + 1}</span>`
+    const username = `<span>${user.username}</span>`
+    const adminIcon = user.admin ? '<i class="fa-solid fa-skull-crossbones icon"></i>' : ''
+    const statusIcon = user.active ? '<i class="fa-solid fa-wifi icon status online"></i>' : '<i class="fa-solid fa-wifi icon status offline"></i>'
+    return (`
+      <li ${highlight}>
+        ${position}
+        ${username}
+        ${adminIcon}
+        ${statusIcon}
+      </li>
+    `)
+  })
+  renderContainer.innerHTML = list.join('')
 }
 
 // Fetch the configuration (IP, PORT, ROOMS)
@@ -47,7 +63,7 @@ fetch('/config')
     const savedRoom = localStorage.getItem('room') || ROOMS[0]
     select.value = savedRoom
   })
-  .catch(error => console.log('Errore nel caricamento della configurazione:', error))
+  .catch(error => openModal(`Unable to fetch the configuration: ${error}`))
 
 // Get the device ID or generate a new one
 let deviceId = localStorage.getItem('deviceId')
@@ -90,6 +106,10 @@ setOnClick('[data-btn-action="finish-turn"]', () => {
 setOnClick('[data-btn-action="prev-turn"]', () => {
   ws.send(JSON.stringify({ type: 'prev-turn' }))
 })
+setOnClick('[data-btn-action="close-modal"]', () => {
+  setProperty('[data-ui-type="modal"]', 'display', 'none')
+  setTextContent('[data-render="modal-message"]', '')
+})
 
 function connect(_username, _admin, _room) {
   ws = new WebSocket(`ws://${IP}:${PORT}`)
@@ -130,7 +150,7 @@ function connect(_username, _admin, _room) {
     if (MSG_TYPE === 'room-update') {
       const { count, connectedUsers } = data
       setTextContent('[data-render="room-users-count"]', count)
-      renderRoom('[data-render="room-connected-users"]', connectedUsers)
+      renderUsersList('[data-render="room-connected-users"]', connectedUsers)
     }
 
     // # Turn update
@@ -139,16 +159,7 @@ function connect(_username, _admin, _room) {
       const userTurn = turnOrder[currentTurnIndex] ?? {}
       setProperty('[data-screen-name="room"]', 'display', 'none')
       removeProperty('[data-screen-name="turns"]', 'display', 'none')
-      // Aggiorna la visualizzazione della lista dei turni
-      let html = ''
-      turnOrder.forEach((user, index) => {
-        if (index === currentTurnIndex) {
-          html += `<div style='font-weight: bold'>${user.username}</div>`
-        } else {
-          html += `<div>${user.username}</div>`
-        }
-      })
-      document.querySelector('[data-render="room-connected-users-turns-list"]').innerHTML = html
+      renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
 
       // If it's your turn or you're an admin, show the "Finish turn" button
       if (_admin || userTurn.deviceId === deviceId) {
@@ -171,6 +182,7 @@ function connect(_username, _admin, _room) {
   // # Error handling
   ws.onerror = function (error) {
     console.log('WebSocket error:', error)
-    setTextContent('#error', typeof error === 'object' ? JSON.parse(error) : error)
+    let message = typeof error === 'object' ? JSON.stringify(error) : error
+    openModal(`WebSocket error: ${message}`)
   }
 }
