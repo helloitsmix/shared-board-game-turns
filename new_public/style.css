@@ -87,7 +87,7 @@ button {
 .inputs-container {
   display: flex;
   flex-direction: column;
-  row-gap: 1rem;
+  gap: 1rem;
   padding: 1rem;
 }
 
@@ -124,7 +124,7 @@ button {
 
 .btn-menu-container button {
   cursor: pointer;
-  padding: 1rem 0.8rem;
+  padding: 1rem;
   box-sizing: border-box;
   border: 0.2rem solid #AAAAAA;
   border-radius: 0.5rem;
@@ -132,12 +132,16 @@ button {
   font-weight: 800;
   font-size: 1.2rem;
   text-transform: uppercase;
-  flex: 1;
+  /* flex: 1; */
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
   justify-content: center;
   align-items: center;
+}
+
+.btn-menu-container button:last-child {
+  flex: 1;
 }
 
 .room-users-count {
@@ -161,7 +165,7 @@ button {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.8rem;
+  gap: 1rem;
 }
 
 .room-connected-users-list li.highlight {

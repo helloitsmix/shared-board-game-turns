@@ -156,13 +156,16 @@ function connect(_username, _admin, _room) {
     // # Turn update
     if (MSG_TYPE === 'turn-update') {
       const { turnOrder, currentTurnIndex } = data
-      const userTurn = turnOrder[currentTurnIndex] ?? {}
+      const userTurn = turnOrder[currentTurnIndex]
       setProperty('[data-screen-name="room"]', 'display', 'none')
       removeProperty('[data-screen-name="turns"]', 'display', 'none')
       renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
 
+      // Aggiungere che se non c'è user turn finish turn viene rimosso e viene allargato genera turni
+      
+
       // If it's your turn or you're an admin, show the "Finish turn" button
-      if (_admin || userTurn.deviceId === deviceId) {
+      if (_admin || userTurn?.deviceId === deviceId) {
         removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
       } else {
         setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
