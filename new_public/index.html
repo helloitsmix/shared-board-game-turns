@@ -63,8 +63,6 @@
       </label>
     </div>
 
-    <div class='filler'></div>
-
     <div class='btn-menu-container'>
       <button type='button' data-btn-action='login'>
         <i class='fa-solid fa-plug'></i>
@@ -76,8 +74,13 @@
   <!-- ROOM -->
   <div class='screen' data-screen-name='room' style='display: none;'>
     <div class='navbar'>
-      <span class='room-name' data-render='room-name'>Room</span>
-      <div class='room-users-count'>
+      <div class='navbar-container'>
+        <button type='button' data-btn-action='exit-turns'>
+          <i class="fa-solid fa-right-from-bracket" style='transform: scaleX(-1);'></i>
+        </button>
+        <span class='room-name' data-render='room-name'>Room</span>
+      </div>
+      <div class='navbar-container'>
         <span data-render='room-users-count'></span>
         <i class='fa-solid fa-user'></i>
       </div>
@@ -96,8 +99,13 @@
   <!-- TURNS (UNIRE CON ROOM??) -->
   <div class='screen' data-screen-name='turns' style='display: none;'>
     <div class='navbar'>
-      <span class='room-name' data-render='room-name'>Room</span>
-      <div class='room-users-count'>
+      <div class='navbar-container'>
+        <button type='button' data-btn-action='exit-turns'>
+          <i class="fa-solid fa-right-from-bracket" style='transform: scaleX(-1);'></i>
+        </button>
+        <span class='room-name' data-render='room-name'>Room</span>
+      </div>
+      <div class='navbar-container'>
         <span data-render='room-users-count'></span>
         <i class='fa-solid fa-user'></i>
       </div>
@@ -108,11 +116,9 @@
     <div class='btn-menu-container'>
       <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
         <i class='fa-solid fa-arrow-left'></i>
-        <!-- <span>Turno precedente</span> -->
       </button>
       <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
         <i class='fa-solid fa-arrow-rotate-right'></i>
-        <!-- <span>Rigenera turni</span> -->
       </button>
       <button type='button' data-btn-action='finish-turn' data-ui-type='admin'>
         <span>Finisci turno</span>

@@ -16,6 +16,14 @@ const removeProperty = (selector, propertyName, value) => {
   let elements = document.querySelectorAll(selector) || []
   elements.forEach(elem => elem.style.removeProperty(propertyName, value))
 }
+const addClass = (selector, className) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.classList.add(className))
+}
+const removeClass = (selector, className) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.classList.remove(className))
+}
 const setOnClick = (selector, fn = () => { }) => {
   let elements = document.querySelectorAll(selector) || []
   elements.forEach(elem => elem.onclick = fn)
@@ -106,6 +114,13 @@ setOnClick('[data-btn-action="finish-turn"]', () => {
 setOnClick('[data-btn-action="prev-turn"]', () => {
   ws.send(JSON.stringify({ type: 'prev-turn' }))
 })
+setOnClick('[data-btn-action="exit-turns"]', () => {
+  // setProperty('[data-screen-name="room"]', 'display', 'none')
+  // setProperty('[data-screen-name="turns"]', 'display', 'none')
+  // removeProperty('[data-screen-name="login"]', 'display', 'none')
+  // ws.send(JSON.stringify({ type: 'logout' }))
+  // ws.close()
+})
 setOnClick('[data-btn-action="close-modal"]', () => {
   setProperty('[data-ui-type="modal"]', 'display', 'none')
   setTextContent('[data-render="modal-message"]', '')
@@ -161,14 +176,20 @@ function connect(_username, _admin, _room) {
       removeProperty('[data-screen-name="turns"]', 'display', 'none')
       renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
 
-      // Aggiungere che se non c'è user turn finish turn viene rimosso e viene allargato genera turni
-      
-
-      // If it's your turn or you're an admin, show the "Finish turn" button
-      if (_admin || userTurn?.deviceId === deviceId) {
-        removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
-      } else {
+      if (!userTurn) {
+        // If no turn prompt to regenerate turns
         setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        setProperty('[data-btn-action="generate-turn"]', 'flex', '1')
+        addClass('[data-btn-action="generate-turn"]', 'highlight')
+      } else {
+        removeProperty('[data-btn-action="generate-turn"]', 'flex', '1')
+        removeClass('[data-btn-action="generate-turn"]', 'highlight')
+        // If it's your turn or you're an admin, show the "Finish turn" button
+        if (_admin || userTurn.deviceId === deviceId) {
+          removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        } else {
+          setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        }
       }
     }
   }

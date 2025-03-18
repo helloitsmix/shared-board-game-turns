@@ -34,7 +34,7 @@ button {
 }
 
 .modal {
-  background: white;
+  background: #FFFFFF;
   margin: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -57,19 +57,9 @@ button {
   height: 100%;
 }
 
-.filler {
-  flex: 1;
-}
-
-/* .bottom {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-} */
-
 .navbar {
   background-color: #313131;
-  color: white;
+  color: #FFFFFF;
   height: 3.75rem;
   padding: 0 1rem;
   display: flex;
@@ -81,7 +71,13 @@ button {
 .navbar .room-name {
   font-size: 1.8rem;
   font-weight: 800;
-  /* padding: 0 1rem; */
+}
+
+.navbar button {
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #FFF;
 }
 
 .inputs-container {
@@ -89,6 +85,7 @@ button {
   flex-direction: column;
   gap: 1rem;
   padding: 1rem;
+  flex: 1;
 }
 
 .input-container {
@@ -123,7 +120,6 @@ button {
 }
 
 .btn-menu-container button {
-  cursor: pointer;
   padding: 1rem;
   box-sizing: border-box;
   border: 0.2rem solid #AAAAAA;
@@ -138,13 +134,20 @@ button {
   gap: 0.5rem;
   justify-content: center;
   align-items: center;
+  height: 60px;
+  min-width: 60px;
+}
+
+.btn-menu-container button.highlight {
+  border-color: #a99367;
+  background-color: #FFD072;
 }
 
 .btn-menu-container button:last-child {
   flex: 1;
 }
 
-.room-users-count {
+.navbar-container {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -169,7 +172,7 @@ button {
 }
 
 .room-connected-users-list li.highlight {
-  background-color: rgba(255, 229, 178, 0.75);
+  background-color: #FFD072;
 }
 
 .room-connected-users-list li .position {
@@ -177,8 +180,13 @@ button {
   color: #AAAAAA;
 }
 
+.room-connected-users-list li .bold {
+  font-weight: bold;
+}
+
 .room-connected-users-list li .icon {
   font-size: 0.8rem;
+  color: #AAAAAA;
 }
 
 .room-connected-users-list li .status {
