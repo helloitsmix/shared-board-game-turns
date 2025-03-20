@@ -2,6 +2,9 @@ let ws
 let IP = '127.0.0.1'
 let PORT = 3000
 let ROOMS = ['Default']
+let DEFAULT_COLOR = '#FFDC95'
+let USE_COLORS = false
+let COLORS = []
 
 // Utility functions
 const setTextContent = (selector, text = '') => {
@@ -35,17 +38,17 @@ const openModal = (message) => {
 const renderUsersList = (selector, users, currentIndex) => {
   const renderContainer = document.querySelector(selector)
   const list = users.map((user, index) => {
-    const highlight = index === currentIndex ? 'class="highlight"' : ''
-    const position = `<span class="position">${index + 1}</span>`
-    const username = `<span>${user.username}</span>`
-    const adminIcon = user.admin ? '<i class="fa-solid fa-skull-crossbones icon"></i>' : ''
-    const statusIcon = user.active ? '<i class="fa-solid fa-wifi icon status online"></i>' : '<i class="fa-solid fa-wifi icon status offline"></i>'
+    const userColor = (USE_COLORS && user.color) ? `<span class="color" style="background-color: ${user.color}"></span>` : ''
+    const highlightColor = (USE_COLORS && user.color) ? `${user.color}26` : `${DEFAULT_COLOR}`
+    const highlight = index === currentIndex ? `style="background-color: ${highlightColor}"` : ''
+
     return (`
       <li ${highlight}>
-        ${position}
-        ${username}
-        ${adminIcon}
-        ${statusIcon}
+        <span class="position">${index + 1}</span>
+        ${userColor}
+        <span class="username">${user.username}</span>
+        ${user.admin ? '<i class="fa-solid fa-crown icon"></i>' : ''}
+        <i class="fa-solid fa-wifi icon status ${user.active ? 'online' : 'offline'}"></i>
       </li>
     `)
   })
@@ -59,6 +62,9 @@ fetch('/config')
     IP = config.IP
     PORT = config.PORT
     ROOMS = config.ROOMS
+    DEFAULT_COLOR = config.DEFAULT_COLOR
+    USE_COLORS = config.USE_COLORS
+    COLORS = config.COLORS
 
     const select = document.getElementById('rooms-input')
     ROOMS.forEach(room => {
@@ -70,13 +76,43 @@ fetch('/config')
 
     const savedRoom = localStorage.getItem('room') || ROOMS[0]
     select.value = savedRoom
+
+    if (USE_COLORS) {
+      let savedColor = localStorage.getItem('color')
+      if (!savedColor || !COLORS.includes(savedColor)) {
+        savedColor = COLORS[0]
+      }
+
+      // show color picker
+      removeProperty('[data-ui-type="color-picker"]', 'display', 'none')
+      
+      // set saved color
+      const colorInput = document.getElementById('color-input')
+      colorInput.dataset.color = savedColor
+
+      // render colors
+      COLORS.forEach(color => {
+        const colorBtn = document.createElement('button')
+        colorBtn.classList.add('color-option')
+        colorBtn.classList.toggle('selected', color === savedColor)
+        colorBtn.style.backgroundColor = color
+        colorBtn.dataset.color = color
+        colorBtn.addEventListener('click', () => {
+          removeClass('.color-option', 'selected')
+          colorBtn.classList.add('selected')
+          colorInput.dataset.color = color
+        })
+        colorInput.appendChild(colorBtn)
+      })
+      
+    }
   })
   .catch(error => openModal(`Unable to fetch the configuration: ${error}`))
 
 // Get the device ID or generate a new one
 let deviceId = localStorage.getItem('deviceId')
 if (!deviceId) {
-  deviceId = Date.now()
+  deviceId = Date.now().toString()
   localStorage.setItem('deviceId', deviceId)
 }
 
@@ -84,6 +120,7 @@ if (!deviceId) {
 const usernameInput = document.getElementById('username')
 const adminCheckbox = document.getElementById('admin')
 const roomInput = document.getElementById('rooms-input')
+const colorInput = document.getElementById('color-input')
 const savedUsername = localStorage.getItem('username')
 const savedAdmin = localStorage.getItem('admin')
 
@@ -96,6 +133,7 @@ setOnClick('[data-btn-action="login"]', () => {
   const username = usernameInput.value.trim()
   const admin = adminCheckbox.checked
   const room = roomInput.value || ROOMS[0]
+  const color = colorInput.dataset.color
   if (!username) {
     alert('Inserisci un nome valido')
     return
@@ -103,7 +141,8 @@ setOnClick('[data-btn-action="login"]', () => {
   localStorage.setItem('username', username)
   localStorage.setItem('admin', admin)
   localStorage.setItem('room', room)
-  connect(username, admin, room)
+  localStorage.setItem('color', color)
+  connect(username, admin, room, color)
 })
 setOnClick('[data-btn-action="generate-turn"]', () => {
   ws.send(JSON.stringify({ type: 'generate-turn' }))
@@ -126,7 +165,7 @@ setOnClick('[data-btn-action="close-modal"]', () => {
   setTextContent('[data-render="modal-message"]', '')
 })
 
-function connect(_username, _admin, _room) {
+function connect(_username, _admin, _room, _color) {
   ws = new WebSocket(`ws://${IP}:${PORT}`)
 
   ws.onopen = function () {
@@ -136,7 +175,8 @@ function connect(_username, _admin, _room) {
       deviceId,
       username: _username,
       admin: _admin,
-      room: _room
+      room: _room,
+      color: _color
     }))
   }
 
@@ -166,6 +206,10 @@ function connect(_username, _admin, _room) {
       const { count, connectedUsers } = data
       setTextContent('[data-render="room-users-count"]', count)
       renderUsersList('[data-render="room-connected-users"]', connectedUsers)
+      
+      setProperty('[data-screen-name="login"]', 'display', 'none')
+      removeProperty('[data-screen-name="room"]', 'display', 'none')
+      setProperty('[data-screen-name="turns"]', 'display', 'none')
     }
 
     // # Turn update
@@ -199,7 +243,7 @@ function connect(_username, _admin, _room) {
     // In caso di disconnessione, tentiamo di riconnetterci dopo qualche secondo
     setTimeout(() => {
       console.log('Tentativo di riconnessione...')
-      connect(_username, _admin, _room)
+      connect(_username, _admin, _room, _color)
     }, 3000)
   }
 

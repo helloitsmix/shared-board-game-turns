@@ -55,6 +55,7 @@ wss.on('connection', function connection(ws) {
           existing.username = data.username // Aggiorna il nome se è stato modificato
           existing.admin = data.admin       // Aggiorna il flag admin se è stato modificato
           existing.room = data.room
+          existing.color = data.color
           existing.active = true
           existing.ws = ws
         } else {
@@ -63,6 +64,7 @@ wss.on('connection', function connection(ws) {
             username: data.username,
             admin: data.admin,
             room: data.room,
+            color: data.color,
             active: true,
             ws: ws,
             timeout: null
@@ -181,7 +183,8 @@ const broadcastLoginSuccessful = (deviceId) => {
       deviceId: deviceId,
       username: user.username,
       admin: user.admin,
-      room: user.room
+      room: user.room,
+      color: user.color
     })
   }
 }
@@ -195,7 +198,8 @@ function broadcastUpdateRoom(room) {
         deviceId,
         username: user.username,
         admin: user.admin,
-        active: user.active
+        active: user.active,
+        color: user.color
       })
     }
   })
@@ -227,7 +231,8 @@ function broadcastTurnOrder(room) {
       deviceId,
       username: user.username,
       admin: user.admin,
-      active: user.active
+      active: user.active,
+      color: user.color
     }]
   }, [])
   wss.clients.forEach(client => {
