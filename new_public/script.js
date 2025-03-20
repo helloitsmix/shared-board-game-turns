@@ -112,7 +112,7 @@ fetch('/config')
 // Get the device ID or generate a new one
 let deviceId = localStorage.getItem('deviceId')
 if (!deviceId) {
-  deviceId = Date.now().toString()
+  deviceId = Date.now().toString(36) + Math.random().toString(36).substring(2)
   localStorage.setItem('deviceId', deviceId)
 }
 
