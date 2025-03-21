@@ -5,6 +5,7 @@ let ROOMS = ['Default']
 let DEFAULT_COLOR = '#FFDC95'
 let USE_COLORS = false
 let COLORS = []
+const WS_CLOSE_LOGOUT_CODE = 4001
 
 // Utility functions
 const setTextContent = (selector, text = '') => {
@@ -38,7 +39,7 @@ const openModal = (message) => {
 const renderUsersList = (selector, users, currentIndex) => {
   const renderContainer = document.querySelector(selector)
   const list = users.map((user, index) => {
-    const userColor = (USE_COLORS && user.color) ? `<span class="color" style="background-color: ${user.color}"></span>` : ''
+    const userColor = (USE_COLORS && user.color) ? `<span class="user-color" style="background-color: ${user.color}"></span>` : ''
     const highlightColor = (USE_COLORS && user.color) ? `${user.color}26` : `${DEFAULT_COLOR}`
     const highlight = index === currentIndex ? `style="background-color: ${highlightColor}"` : ''
 
@@ -154,10 +155,7 @@ setOnClick('[data-btn-action="prev-turn"]', () => {
   ws.send(JSON.stringify({ type: 'prev-turn' }))
 })
 setOnClick('[data-btn-action="exit-turns"]', () => {
-  // setProperty('[data-screen-name="room"]', 'display', 'none')
-  // setProperty('[data-screen-name="turns"]', 'display', 'none')
-  // removeProperty('[data-screen-name="login"]', 'display', 'none')
-  // ws.send(JSON.stringify({ type: 'logout' }))
+  ws.send(JSON.stringify({ type: 'logout' }))
   // ws.close()
 })
 setOnClick('[data-btn-action="close-modal"]', () => {
@@ -223,11 +221,11 @@ function connect(_username, _admin, _room, _color) {
       if (!userTurn) {
         // If no turn prompt to regenerate turns
         setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
-        setProperty('[data-btn-action="generate-turn"]', 'flex', '1')
-        addClass('[data-btn-action="generate-turn"]', 'highlight')
+        setProperty('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'flex', '1')
+        addClass('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'highlight')
       } else {
-        removeProperty('[data-btn-action="generate-turn"]', 'flex', '1')
-        removeClass('[data-btn-action="generate-turn"]', 'highlight')
+        removeProperty('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'flex', '1')
+        removeClass('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'highlight')
         // If it's your turn or you're an admin, show the "Finish turn" button
         if (_admin || userTurn.deviceId === deviceId) {
           removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
@@ -236,15 +234,28 @@ function connect(_username, _admin, _room, _color) {
         }
       }
     }
+
+    // # User logout (login redirect)
+    if (MSG_TYPE === 'logout-successful') {
+      setProperty('[data-screen-name="room"]', 'display', 'none')
+      setProperty('[data-screen-name="turns"]', 'display', 'none')
+      removeProperty('[data-screen-name="login"]', 'display', 'none')
+    }
   }
 
-  // # Reconnection attempt
-  ws.onclose = function () {
-    // In caso di disconnessione, tentiamo di riconnetterci dopo qualche secondo
-    setTimeout(() => {
-      console.log('Tentativo di riconnessione...')
-      connect(_username, _admin, _room, _color)
-    }, 3000)
+  // # Websocket close
+  ws.onclose = function (e) {
+    // Logout from the server
+    if (e.code === WS_CLOSE_LOGOUT_CODE) {
+      console.log('Logout successful')
+      return
+    } else {
+      // Show a modal with the reason of the disconnection and attempt to reconnect
+      openModal(`Connection lost: ${e.reason}, trying to reconnect...`)
+      setTimeout(() => {
+        connect(_username, _admin, _room, _color)
+      }, 3000)
+    }
   }
 
   // # Error handling

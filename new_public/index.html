@@ -60,7 +60,7 @@
 
       <div class='input-container' data-ui-type='color-picker' style='display: none;'>
         <span>Color</span>
-        <div class='color-picker' id='color-input'></div>
+        <div class='color-options' id='color-input'></div>
       </div>
 
       <label>
@@ -94,7 +94,7 @@
     <ul class='room-connected-users-list' data-render='room-connected-users'></ul>
 
     <div class='btn-menu-container'>
-      <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin' class='highlight'>
         <i class='fa-solid fa-arrow-rotate-right'></i>
         <span>Genera turni</span>
       </button>
@@ -122,7 +122,7 @@
       <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
         <i class='fa-solid fa-arrow-left'></i>
       </button>
-      <button type='button' data-btn-action='generate-turn' data-ui-type='admin'>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin' data-btn-type='icon-only'>
         <i class='fa-solid fa-arrow-rotate-right'></i>
       </button>
       <button type='button' data-btn-action='finish-turn' data-ui-type='admin'>

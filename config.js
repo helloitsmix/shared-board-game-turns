@@ -19,20 +19,19 @@ const config = {
   // Multi color highlight user choice
   USE_COLORS: true,
   COLORS: [
-    '#AAAAAA', // – Grigio chiaro
-    '#D72638', // – Rosso mattone
-    '#F57C00', // – Arancione caldo
-    '#F4B400', // – Giallo oro morbido
-    '#00875A', // – Verde bosco
-    '#0077B6', // – Blu oceano
-    '#5E60CE', // – Viola tenue
-    '#A35D6A', // – Malva elegante
-    '#3D348B', // – Indaco profondo
-    '#9C6644', // – Marrone terra di Siena
-    '#2D6A4F', // – Verde scuro
-    '#FF6347'  // – Rosso corallo
+'#999999', // Gray
+    '#D72638', // Brick red
+    '#F57C00', // Hot orange
+    '#F4B400', // Saffron yellow
+    '#9C6644', // Brown
+    '#2D6A4F', // Viridian
+    '#00875A', // Forest green
+    '#0077B6', // Cerulean blue
+    '#50858B', // Muted Teal
+    '#5E60CE', // Iris purple
+    '#a44cab', // Indigo
+    '#D5A6BD'  // Dusty Rose
   ]
-
 }
 
 module.exports = config

@@ -198,33 +198,28 @@ button {
   color: #DD0000;
 }
 
-.color {
-  width: 1rem;
-  height: 1rem;
-  border-radius: 0.2rem;
-}
-
-.color-picker {
+.color-options {
   display: flex;
   gap: 10px;
-  /* margin: 20px; */
   flex-wrap: wrap;
 }
 
 .color-option {
-  width: 55px;
-  height: 55px;
-  border-radius: 8px;
-  cursor: pointer;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.4rem;
   box-sizing: border-box;
   border: none;
 }
 
 .color-option.selected {
-  border: 2px solid black;
+  border-color: #313131;
+  border-width: 0.2rem;
+  border-style: dashed;
 }
 
-.selected-color {
-  margin-top: 20px;
-  font-size: 18px;
+.user-color {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.2rem;
 }

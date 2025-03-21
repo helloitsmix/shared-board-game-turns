@@ -1,14 +1,16 @@
 const express = require('express')
 const http = require('http')
 const WebSocket = require('ws')
-const CONFIG = require('./config') // Importa la configurazione
+const CONFIG = require('./config') // Import the configuration
 
 const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
+const WS_CLOSE_LOGOUT_CODE = 4001
 
-// Mappa per tenere traccia degli utenti: deviceId => { username, ws, active, timeout }
+// Users and rooms maps
 const users = new Map()
+const rooms = new Map()
 
 const getUser = (deviceId = '') => {
   if (users.has(deviceId)) {
@@ -16,9 +18,6 @@ const getUser = (deviceId = '') => {
   }
   return undefined
 }
-
-// Mappa per tenere lo stato dei turni per ogni stanza: room => { turnOrder, currentTurnIndex, turnsGenerated }
-const rooms = new Map()
 
 const getRoomState = (room = '') => {
   if (!rooms.has(room)) {
@@ -41,25 +40,27 @@ wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
     try {
       const data = JSON.parse(message)
-      console.log('data on server:', data)
+      console.log('Incoming message:', data)
+
+      // # Login user into a room
       if (data.type === 'login') {
         ws.deviceId = data.deviceId
-        
-        // Se l'utente esiste già (riconnessione) annulla il timer se presente
+
+        // Update or add the user to the users map
+        // clear the user timeout if the user is back before the grace period
         const existing = getUser(data.deviceId)
         if (existing) {
           if (existing.timeout) {
             clearTimeout(existing.timeout)
             existing.timeout = null
           }
-          existing.username = data.username // Aggiorna il nome se è stato modificato
-          existing.admin = data.admin       // Aggiorna il flag admin se è stato modificato
+          existing.username = data.username
+          existing.admin = data.admin
           existing.room = data.room
           existing.color = data.color
           existing.active = true
           existing.ws = ws
         } else {
-          // Nuovo utente o utente che era stato rimosso definitivamente
           users.set(data.deviceId, {
             username: data.username,
             admin: data.admin,
@@ -71,11 +72,11 @@ wss.on('connection', function connection(ws) {
           })
         }
 
-        // single update
+        // broadcast user login success
         broadcastLoginSuccessful(data.deviceId)
-        // room update
+        // broadcast the room the user joined
         broadcastUpdateRoom(data.room)
-        // turn update (if started)
+        // broadcast the turn order if turns are already generated
         let roomState = getRoomState(data.room)
         if (roomState.turnsGenerated) {
           if (!roomState.turnOrder.includes(data.deviceId)) {
@@ -85,35 +86,30 @@ wss.on('connection', function connection(ws) {
         }
       }
 
-      // TODO: DA PULIRE --- Gestione dei messaggi per il sistema di turni ---
-
+      // # Generate turns order
       if (data.type === 'generate-turn') {
-        // user who asked to generate turns
         const user = getUser(ws.deviceId) ?? {}
-        // Solo gli admin possono generare i turni
         if (!user.admin) return
         const room = user.room
         const roomState = getRoomState(room)
-        roomState.turnsGenerated = true
-        // Raccogli tutti gli utenti della stanza
         const roomUsers = []
         users.forEach((u, deviceId) => {
           if (u.room === room) {
             roomUsers.push(deviceId)
           }
         })
-        // Shuffle casuale
-        roomState.turnOrder = shuffle(roomUsers)
+        roomState.turnsGenerated = true
         roomState.currentTurnIndex = 0
+        roomState.turnOrder = shuffle(roomUsers)
         broadcastTurnOrder(room)
       }
 
+      // # Go to the next turn
       if (data.type === 'finish-turn') {
-        // Solo l'utente corrente (oppure un admin) può terminare il turno
         const user = getUser(ws.deviceId) ?? {}
         const room = user.room
-        let roomState = getRoomState(room)
-        // Solo l'utente corrente (o un admin) può terminare il turno
+        const roomState = getRoomState(room)
+        // Only the admin or the user playing can finish the turn
         if (!user.admin && roomState.turnOrder[roomState.currentTurnIndex] !== ws.deviceId) return
         if (roomState.currentTurnIndex < roomState.turnOrder.length) {
           roomState.currentTurnIndex++
@@ -121,16 +117,23 @@ wss.on('connection', function connection(ws) {
         broadcastTurnOrder(room)
       }
 
+      // # Go back to the previous turn
       if (data.type === 'prev-turn') {
         const user = getUser(ws.deviceId) ?? {}
         // Solo gli admin possono tornare indietro
         if (!user.admin) return
         const room = user.room
-        let roomState = getRoomState(room)
+        const roomState = getRoomState(room)
         if (roomState.currentTurnIndex > 0) {
           roomState.currentTurnIndex--
         }
         broadcastTurnOrder(room)
+      }
+
+      // # Logout user from the room
+      if (data.type === 'logout') {
+        broadcastLogoutSuccessful(ws.deviceId)
+        ws.close(WS_CLOSE_LOGOUT_CODE, 'User logout')
       }
 
     } catch (err) {
@@ -154,31 +157,33 @@ wss.on('connection', function connection(ws) {
       // Set a timer for the user permanent removal
       user.timeout = setTimeout(() => {
         users.delete(ws.deviceId)
-        // Remove user turn from the turn order
-        const index = roomState.turnOrder.indexOf(ws.deviceId)
-        if (index !== -1) {
-          roomState.turnOrder.splice(index, 1)
-          if (index < roomState.currentTurnIndex) {
-            roomState.currentTurnIndex--
-          } else if (index === roomState.currentTurnIndex) {
-            if (roomState.currentTurnIndex >= roomState.turnOrder.length) {
-              roomState.currentTurnIndex = roomState.turnOrder.length
+        if (roomState.turnsGenerated) {
+          // Remove user turn from the turn order
+          const index = roomState.turnOrder.indexOf(ws.deviceId)
+          if (index !== -1) {
+            roomState.turnOrder.splice(index, 1)
+            if (index < roomState.currentTurnIndex) {
+              roomState.currentTurnIndex--
+            } else if (index === roomState.currentTurnIndex) {
+              if (roomState.currentTurnIndex >= roomState.turnOrder.length) {
+                roomState.currentTurnIndex = roomState.turnOrder.length
+              }
             }
+            broadcastTurnOrder(user.room)
           }
-          broadcastTurnOrder(user.room)
+        } else {
+          broadcastUpdateRoom(user.room)
         }
-        broadcastUpdateRoom(user.room)
       }, CONFIG.GRACE_PERIOD)
     }
   })
 })
 
+// Broadcast login message to a client
 const broadcastLoginSuccessful = (deviceId) => {
   const user = getUser(deviceId)
-  // let client = [...wss.clients].find(c => c.deviceId === deviceId)
   if (user) {
-    let client = user.ws
-    clientSend(client, {
+    clientSend(user.ws, {
       type: 'login-successful',
       deviceId: deviceId,
       username: user.username,
@@ -189,8 +194,16 @@ const broadcastLoginSuccessful = (deviceId) => {
   }
 }
 
-// Funzione per inviare la lista degli utenti attivi a tutti i client di una room
-function broadcastUpdateRoom(room) {
+// Broadcast logout message to a client
+const broadcastLogoutSuccessful = (deviceId) => {
+  const user = getUser(deviceId)
+  if (user) {
+    clientSend(user.ws, { type: 'logout-successful' })
+  }
+}
+
+// Broadcast the room update to all clients in the room
+const broadcastUpdateRoom = (room) => {
   const usersInRoom = []
   users.forEach((user, deviceId) => {
     if (user.room === room) {
@@ -215,13 +228,8 @@ function broadcastUpdateRoom(room) {
   })
 }
 
-const clientSend = (client, msg) => {
-  let message = JSON.stringify(msg)
-  client.send(message)
-}
-
-// Funzione per inviare l'ordine dei turni a tutti i client
-function broadcastTurnOrder(room) {
+// Broadcast the turn order to all clients in the room
+const broadcastTurnOrder = (room) => {
   let roomState = getRoomState(room)
   if (!roomState.turnsGenerated) return
   const turnOrderData = roomState.turnOrder.reduce((prev, deviceId) => {
@@ -247,19 +255,23 @@ function broadcastTurnOrder(room) {
   })
 }
 
-server.listen(CONFIG.PORT, CONFIG.IP, function () {
-  console.log(`Server in ascolto su http://${CONFIG.IP}:${CONFIG.PORT}`)
-})
+// Stringify and send a message to a client
+const clientSend = (client, msg) => {
+  let message = JSON.stringify(msg)
+  client.send(message)
+}
 
-function shuffle(array) {
+// Shuffle an array (turns order)
+const shuffle = (array) => {
   let currentIndex = array.length, randomIndex;
-  // While there remain elements to shuffle.
   while (currentIndex != 0) {
-    // Pick a remaining element.
     randomIndex = Math.floor(Math.random() * currentIndex)
     currentIndex--
-    // And swap it with the current element.
     [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]]
   }
   return array
 }
+
+server.listen(CONFIG.PORT, CONFIG.IP, function () {
+  console.log(`Server listening on http://${CONFIG.IP}:${CONFIG.PORT}`)
+})
