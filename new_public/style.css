@@ -38,9 +38,7 @@ button {
   margin: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  /* text-align: center; */
   min-width: 250px;
-  
 }
 
 .modal .modal-message {
@@ -129,7 +127,6 @@ button {
   font-weight: 800;
   font-size: 1.2rem;
   text-transform: uppercase;
-  /* flex: 1; */
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
@@ -181,20 +178,23 @@ button {
   font-weight: bold;
 }
 
-.room-connected-users-list li .icon {
+.room-connected-users-list li .icons-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
   font-size: 0.8rem;
   color: #AAAAAA;
 }
 
-.room-connected-users-list li .status {
-  flex: 1;
-  text-align: right;
+.room-connected-users-list li .admin-icon {
+  color: #FFBB00;
 }
-
-.room-connected-users-list li .status.online {
+.room-connected-users-list li .status-online-icon {
   color: #00DD00;
 }
-.room-connected-users-list li .status.offline {
+.room-connected-users-list li .status-offline-icon {
   color: #DD0000;
 }
 

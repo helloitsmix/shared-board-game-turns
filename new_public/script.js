@@ -48,8 +48,10 @@ const renderUsersList = (selector, users, currentIndex) => {
         <span class="position">${index + 1}</span>
         ${userColor}
         <span class="username">${user.username}</span>
-        ${user.admin ? '<i class="fa-solid fa-crown icon"></i>' : ''}
-        <i class="fa-solid fa-wifi icon status ${user.active ? 'online' : 'offline'}"></i>
+        <span class="icons-container">
+          ${user.admin ? '<i class="fa-solid fa-crown admin-icon"></i>' : ''}
+          <i class="fa-solid fa-wifi ${user.active ? 'status-online-icon' : 'status-offline-icon'}"></i>
+        </span>
       </li>
     `)
   })

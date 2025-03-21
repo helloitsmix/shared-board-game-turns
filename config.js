@@ -19,7 +19,7 @@ const config = {
   // Multi color highlight user choice
   USE_COLORS: true,
   COLORS: [
-'#999999', // Gray
+    '#999999', // Gray
     '#D72638', // Brick red
     '#F57C00', // Hot orange
     '#F4B400', // Saffron yellow
