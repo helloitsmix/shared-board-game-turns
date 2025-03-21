@@ -16,12 +16,18 @@ This application is a real-time turn management system for board games. It allow
      ```
 
 2. **Local Network IP Address**:  
-   The server requires your machine's local IP address to allow other devices on the same network to connect.  
-   - On **Windows**, open the Command Prompt and run:
-     ```bash
-     ipconfig
-     ```
-   - Look for the `IPv4 Address` under your active network connection. Example: `192.168.1.105`.
+   The server requires your machine's local IP address to allow other devices on the same network to connect.
+  - On **Windows**, open the Command Prompt and run:
+    ```bash
+    ipconfig
+    ```
+  - Look for the `IPv4 Address` under your active network connection. Example: `192.168.1.105`.
+
+  - On **Linux**, open a terminal and run:
+    ```bash
+    ifconfig
+    ```
+  - Look for the `inet` address under your active network connection. Example: `192.168.1.105`.
 
 ---
 
