@@ -196,7 +196,9 @@ function connect(_username, _admin, _room, _color) {
       setTextContent('[data-render="room-name"]', room)
       setProperty('[data-screen-name="login"]', 'display', 'none')
       removeProperty('[data-screen-name="room"]', 'display', 'none')
-      if (!admin) {
+      if (admin) {
+        removeProperty('[data-ui-type="admin"]', 'display', 'none') 
+      } else {
         setProperty('[data-ui-type="admin"]', 'display', 'none')
       }
     }
