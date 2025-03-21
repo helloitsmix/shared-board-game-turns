@@ -29,7 +29,8 @@ const config = {
     '#0077B6', // Cerulean blue
     '#50858B', // Muted Teal
     '#5E60CE', // Iris purple
-    '#a44cab', // Indigo
+    '#A44CAB', // Indigo
+    '#8B00FF', // Tha supreme purple
     '#D5A6BD'  // Dusty Rose
   ]
 }
