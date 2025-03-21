@@ -1,122 +1,269 @@
-const socket = new WebSocket('ws://192.168.1.105:8080')
-const id = uuidv4()
-const dungeonNames = ['dungeon master', 'dungeonmaster', 'dungeon', 'master', 'dm', 'diego']
+let ws
+let IP = '127.0.0.1'
+let PORT = 3000
+let ROOMS = ['Default']
+let DEFAULT_COLOR = '#FFDC95'
+let USE_COLORS = false
+let COLORS = []
+const WS_CLOSE_LOGOUT_CODE = 4001
 
-socket.onopen = function (e) {
-  console.log("[open] Connessione stabilita", id)
-  socket.send(JSON.stringify({ action: 'send-id', data: id }))
-};
+// Utility functions
+const setTextContent = (selector, text = '') => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.textContent = text)
+}
+const setProperty = (selector, propertyName, value) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.style.setProperty(propertyName, value))
+}
+const removeProperty = (selector, propertyName, value) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.style.removeProperty(propertyName, value))
+}
+const addClass = (selector, className) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.classList.add(className))
+}
+const removeClass = (selector, className) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.classList.remove(className))
+}
+const setOnClick = (selector, fn = () => { }) => {
+  let elements = document.querySelectorAll(selector) || []
+  elements.forEach(elem => elem.onclick = fn)
+}
+const openModal = (message) => {
+  removeProperty('[data-ui-type="modal"]', 'display', 'none')
+  setTextContent('[data-render="modal-message"]', message)
+}
+const renderUsersList = (selector, users, currentIndex) => {
+  const renderContainer = document.querySelector(selector)
+  const list = users.map((user, index) => {
+    const userColor = (USE_COLORS && user.color) ? `<span class="user-color" style="background-color: ${user.color}"></span>` : ''
+    const highlightColor = (USE_COLORS && user.color) ? `${user.color}26` : `${DEFAULT_COLOR}`
+    const highlight = index === currentIndex ? `style="background-color: ${highlightColor}"` : ''
 
-socket.onmessage = event => {
-
-  data = JSON.parse(event.data)
-  console.log(data)
-
-  // Error handling
-  if (data.error)
-    document.querySelector('#error').textContent = `${data.error}`
-
-  // Update the number of connected clients
-  if (data.numClients)
-    document.querySelector('#num-clients').textContent = `${data.numClients}`
-
-  // Generate the list
-  if (data.arrayOfClients) {
-    let html = data.arrayOfClients.map((client, index) => `
-          <div class='list-name ${client.name === data.name ? 'bold' : ''} ${dungeonNames.includes(client.name?.toLowerCase()) ? 'dungeon' : ''}'>
-            <div>
-              <div class='icon'>${client.name === data.name ? '<i class="fa-solid fa-play"></i>' : ''}</div>
-              <span class='name'>${client.name}</span>
-            </div>
-            <span class='number'>${index+1}</span>
-          </div>`
-    )
-    document.querySelector('#turn-list').innerHTML = html.join('')
-    const firstName = document.querySelector('.list-name')
-    firstName.classList.add('highlighted')
-
-    const ft = document.querySelector('#finish-turn')
-    if (ft)
-      if (data.id === id)
-        ft.classList.remove('hide')
-      else
-        ft.classList.add('hide')
-  }
-
-  // Update the list
-  if (data.currentTurn) {
-    const namesContainers = document.querySelectorAll('.list-name')
-    const ft = document.querySelector('#finish-turn')
-
-    if (ft)
-      if (data.id === id)
-        ft.classList.remove('hide')
-      else
-        ft.classList.add('hide')
-
-    namesContainers.forEach((name, index) => {
-      if (index === data.currentTurn)
-        name.classList.add('highlighted')
-      else
-        name.classList.remove('highlighted')
-    })
-  }
-
-  if (data.notification) {
-    if (['no-turns'].includes(data.notification))
-      document.querySelector('#generate-turn').classList.add('notify')
-  }
-
-  if (data.connection) {
-    const connectedPlayers = document.querySelector('#connected-players')
-    const id = `div-${data.connection}`
-    const timer = setTimeout(() => {
-      const div = document.querySelector(`#${id}`)
-      div.parentNode.removeChild(div)
-    }, 7000)
-    connectedPlayers.innerHTML = connectedPlayers.innerHTML + `<div class='connected' id='${id}'>${data.connection} si è ${data.connected ? 'connesso' : 'disconnesso'}</div>`
-  }
+    return (`
+      <li ${highlight}>
+        <span class="position">${index + 1}</span>
+        ${userColor}
+        <span class="username">${user.username}</span>
+        <span class="icons-container">
+          ${user.admin ? '<i class="fa-solid fa-crown admin-icon"></i>' : ''}
+          <i class="fa-solid fa-wifi ${user.active ? 'status-online-icon' : 'status-offline-icon'}"></i>
+        </span>
+      </li>
+    `)
+  })
+  renderContainer.innerHTML = list.join('')
 }
 
-// const clearConnectedPlayers = 
+// Fetch the configuration (IP, PORT, ROOMS)
+fetch('/config')
+  .then(response => response.json())
+  .then(config => {
+    IP = config.IP
+    PORT = config.PORT
+    ROOMS = config.ROOMS
+    DEFAULT_COLOR = config.DEFAULT_COLOR
+    USE_COLORS = config.USE_COLORS
+    COLORS = config.COLORS
 
-const generateTurn = document.querySelector('#generate-turn')
-generateTurn.addEventListener('click', () => {
-  generateTurn.classList.remove('notify')
-  socket.send(JSON.stringify({ action: 'generate' }))
-})
-generateTurn.classList.add('hide')
+    const select = document.getElementById('rooms-input')
+    ROOMS.forEach(room => {
+      const option = document.createElement('option')
+      option.value = room
+      option.textContent = room
+      select.appendChild(option)
+    })
 
-const finishTurn = document.querySelector('#finish-turn')
-finishTurn.addEventListener('click', () => {
-  socket.send(JSON.stringify({ action: 'finish-turn' }))
-})
-finishTurn.classList.add('hide')
+    const savedRoom = localStorage.getItem('room') || ROOMS[0]
+    select.value = savedRoom
 
-const playerName = document.querySelector('.insert-player-name')
-playerName.addEventListener("keydown", (e) => {
-  if (e.keyCode === 13 || e.keyCode === 9) {
-    const value = document.querySelector('#input-name').value.trim()
-    if (value) {
-      console.log(value)
-      if (dungeonNames.includes(value.toLowerCase())) {
-        socket.send(JSON.stringify({ action: 'send-name', data: { name: value, isMaster: true } }))
-        generateTurn.classList.remove('hide')
-        finishTurn.classList.remove('hide')
-        finishTurn.id = 'master-finish'
-      } else {
-        socket.send(JSON.stringify({ action: 'send-name', data: { name: value, isMaster: false } }))
+    if (USE_COLORS) {
+      let savedColor = localStorage.getItem('color')
+      if (!savedColor || !COLORS.includes(savedColor)) {
+        savedColor = COLORS[0]
       }
 
-      const div = document.querySelector('#insert-player-container')
-      div.style.display = 'none'
+      // show color picker
+      removeProperty('[data-ui-type="color-picker"]', 'display', 'none')
+      
+      // set saved color
+      const colorInput = document.getElementById('color-input')
+      colorInput.dataset.color = savedColor
+
+      // render colors
+      COLORS.forEach(color => {
+        const colorBtn = document.createElement('button')
+        colorBtn.classList.add('color-option')
+        colorBtn.classList.toggle('selected', color === savedColor)
+        colorBtn.style.backgroundColor = color
+        colorBtn.dataset.color = color
+        colorBtn.addEventListener('click', () => {
+          removeClass('.color-option', 'selected')
+          colorBtn.classList.add('selected')
+          colorInput.dataset.color = color
+        })
+        colorInput.appendChild(colorBtn)
+      })
+      
     }
+  })
+  .catch(error => openModal(`Unable to fetch the configuration: ${error}`))
+
+// Get the device ID or generate a new one
+let deviceId = localStorage.getItem('deviceId')
+if (!deviceId) {
+  deviceId = Date.now().toString(36) + Math.random().toString(36).substring(2)
+  localStorage.setItem('deviceId', deviceId)
+}
+
+// Get elements from the DOM
+const usernameInput = document.getElementById('username')
+const adminCheckbox = document.getElementById('admin')
+const roomInput = document.getElementById('rooms-input')
+const colorInput = document.getElementById('color-input')
+const savedUsername = localStorage.getItem('username')
+const savedAdmin = localStorage.getItem('admin')
+
+// Populate the form with saved values
+usernameInput.value = savedUsername || ''
+adminCheckbox.checked = (savedAdmin === 'true')
+
+// Buttons event listeners
+setOnClick('[data-btn-action="login"]', () => {
+  const username = usernameInput.value.trim()
+  const admin = adminCheckbox.checked
+  const room = roomInput.value || ROOMS[0]
+  const color = colorInput.dataset.color
+  if (!username) {
+    alert('Enter a valid name')
+    return
   }
+  localStorage.setItem('username', username)
+  localStorage.setItem('admin', admin)
+  localStorage.setItem('room', room)
+  localStorage.setItem('color', color)
+  connect(username, admin, room, color)
+})
+setOnClick('[data-btn-action="generate-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'generate-turn' }))
+})
+setOnClick('[data-btn-action="finish-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'finish-turn' }))
+})
+setOnClick('[data-btn-action="prev-turn"]', () => {
+  ws.send(JSON.stringify({ type: 'prev-turn' }))
+})
+setOnClick('[data-btn-action="exit-turns"]', () => {
+  ws.send(JSON.stringify({ type: 'logout' }))
+  // ws.close()
+})
+setOnClick('[data-btn-action="close-modal"]', () => {
+  setProperty('[data-ui-type="modal"]', 'display', 'none')
+  setTextContent('[data-render="modal-message"]', '')
 })
 
-function uuidv4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
+function connect(_username, _admin, _room, _color) {
+  ws = new WebSocket(`ws://${IP}:${PORT}`)
+
+  ws.onopen = function () {
+    // # Login
+    ws.send(JSON.stringify({
+      type: 'login',
+      deviceId,
+      username: _username,
+      admin: _admin,
+      room: _room,
+      color: _color
+    }))
+  }
+
+  ws.onmessage = function (event) {
+
+    // # Parse the incoming message
+    const parsed = JSON.parse(event.data)
+    const {
+      type: MSG_TYPE,
+      ...data
+    } = parsed
+    console.log('Incoming message from server:', parsed)
+
+    // # Login successful
+    if (MSG_TYPE === 'login-successful') {
+      const { room, admin } = data
+      setTextContent('[data-render="room-name"]', room)
+      setProperty('[data-screen-name="login"]', 'display', 'none')
+      removeProperty('[data-screen-name="room"]', 'display', 'none')
+      if (!admin) {
+        setProperty('[data-ui-type="admin"]', 'display', 'none')
+      }
+    }
+
+    // # Room update
+    if (MSG_TYPE === 'room-update') {
+      const { count, connectedUsers } = data
+      setTextContent('[data-render="room-users-count"]', count)
+      renderUsersList('[data-render="room-connected-users"]', connectedUsers)
+      
+      setProperty('[data-screen-name="login"]', 'display', 'none')
+      removeProperty('[data-screen-name="room"]', 'display', 'none')
+      setProperty('[data-screen-name="turns"]', 'display', 'none')
+    }
+
+    // # Turn update
+    if (MSG_TYPE === 'turn-update') {
+      const { turnOrder, currentTurnIndex } = data
+      const userTurn = turnOrder[currentTurnIndex]
+      setProperty('[data-screen-name="room"]', 'display', 'none')
+      removeProperty('[data-screen-name="turns"]', 'display', 'none')
+      renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
+
+      if (!userTurn) {
+        // If no turn prompt to regenerate turns
+        setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        setProperty('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'flex', '1')
+        addClass('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'highlight')
+      } else {
+        removeProperty('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'flex', '1')
+        removeClass('[data-btn-action="generate-turn"][data-btn-type="icon-only"]', 'highlight')
+        // If it's your turn or you're an admin, show the "Finish turn" button
+        if (_admin || userTurn.deviceId === deviceId) {
+          removeProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        } else {
+          setProperty('[data-btn-action="finish-turn"]', 'display', 'none')
+        }
+      }
+    }
+
+    // # User logout (login redirect)
+    if (MSG_TYPE === 'logout-successful') {
+      setProperty('[data-screen-name="room"]', 'display', 'none')
+      setProperty('[data-screen-name="turns"]', 'display', 'none')
+      removeProperty('[data-screen-name="login"]', 'display', 'none')
+    }
+  }
+
+  // # Websocket close
+  ws.onclose = function (e) {
+    // Logout from the server
+    if (e.code === WS_CLOSE_LOGOUT_CODE) {
+      console.log('Logout successful')
+      return
+    } else {
+      // Show a modal with the reason of the disconnection and attempt to reconnect
+      openModal(`Connection lost, the system will attempt to reconnect in 3 seconds. (code: ${e.code}, reason: ${e.reason})`)
+      setTimeout(() => {
+        connect(_username, _admin, _room, _color)
+      }, 3000)
+    }
+  }
+
+  // # Error handling
+  ws.onerror = function (error) {
+    console.log('WebSocket error:', error)
+    let message = typeof error === 'object' ? JSON.stringify(error) : error
+    openModal(`WebSocket error: ${message}`)
+  }
 }

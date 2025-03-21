@@ -17,11 +17,38 @@ html, body {
   width: 100%;
 }
 
-#error {
-  color: #FF0000;
+button {
+  cursor: pointer;
 }
 
-.container {
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background: #FFFFFF;
+  margin: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  min-width: 250px;
+}
+
+.modal .modal-message {
+  padding: 1.2rem;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #FF3333;
+}
+
+.screen {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -30,7 +57,7 @@ html, body {
 
 .navbar {
   background-color: #313131;
-  color: white;
+  color: #FFFFFF;
   height: 3.75rem;
   padding: 0 1rem;
   display: flex;
@@ -39,26 +66,37 @@ html, body {
   justify-content: space-between;
 }
 
-.navbar .title {
+.navbar .room-name {
   font-size: 1.8rem;
   font-weight: 800;
-  /* padding: 0 1rem; */
 }
 
-#insert-player-container {
+.navbar button {
+  background-color: transparent;
+  border: none;
+  font-size: 1.5rem;
+  color: #FFF;
+}
+
+.inputs-container {
   display: flex;
   flex-direction: column;
-
-  margin: 1rem;
-  overflow: auto;
+  gap: 1rem;
+  padding: 1rem;
+  flex: 1;
 }
 
-.insert-player {
+.input-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
-.insert-player-name {
+.input-container span {
+  margin-bottom: 0.3rem;
+  margin-left: 0.3rem;
+}
+
+.input {
   flex: 1;
   padding: 0.8rem 1rem;
 
@@ -68,43 +106,9 @@ html, body {
 
   font-size: 1.35rem;
   font-weight: 500;
-}
 
-.pressable {
-  cursor: pointer;
-}
-
-#turn-list {
-  flex: 1;
-  overflow: auto;
-}
-
-.list-name {
-  padding: 1rem 1.6rem;
-  /* padding-left: 25px; */
-  font-size: 1.3rem;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.icon {
-  width: 30px;
-  height: 25px;
-  display: inline-block;
-  color: #AAAAAA;
-}
-
-.number {
-  color: #AAAAAA;
-  font-size: 0.9rem;
-  font-weight: normal;
-}
-
-.dungeon .number {
-  color: #FF4141;
-  font-weight: bold;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .btn-menu-container {
@@ -114,8 +118,8 @@ html, body {
   gap: 1rem;
 }
 
-.btn-menu-container .btn-menu {
-  padding: 1rem 0.8rem;
+.btn-menu-container button {
+  padding: 1rem;
   box-sizing: border-box;
   border: 0.2rem solid #AAAAAA;
   border-radius: 0.5rem;
@@ -123,44 +127,99 @@ html, body {
   font-weight: 800;
   font-size: 1.2rem;
   text-transform: uppercase;
-  flex: 1;
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
   justify-content: center;
   align-items: center;
+  height: 60px;
+  min-width: 60px;
 }
 
-.connected {
+.btn-menu-container button.highlight {
+  border-color: #FFB931;
+  background-color: #FFDC95;
+}
+
+.btn-menu-container button:last-child {
+  flex: 1;
+}
+
+.navbar-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.room-connected-users-list {
+  flex: 1;
+  overflow: auto;
+  list-style: none;
+  padding: 0px;
+  margin: 0;
+}
+
+.room-connected-users-list li {
+  padding: 1rem;
+  font-size: 1.3rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}
+
+.room-connected-users-list li .position {
   font-size: 0.8rem;
-  padding: 0.2rem 1.2rem 0 1.2rem;
-  color: #AAA;
-  font-style: italic;
+  color: #AAAAAA;
 }
 
-.highlighted {
-  background-color: #FFD072;
-}
-
-.dungeon.highlighted {
-  background-color: #FFCCCC;
-}
-
-.dungeon {
-  font-weight: bold;
-  color: #FF4141;
-}
-
-.bold {
+.room-connected-users-list li .bold {
   font-weight: bold;
 }
 
-.hide {
-  /* visibility: hidden; */
-  display: none !important;
+.room-connected-users-list li .icons-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  font-size: 0.8rem;
+  color: #AAAAAA;
 }
 
-.notify {
-  background-color: #FFD072 !important;
-  /* color: #FFFFFF; */
+.room-connected-users-list li .admin-icon {
+  color: #FFBB00;
+}
+.room-connected-users-list li .status-online-icon {
+  color: #00DD00;
+}
+.room-connected-users-list li .status-offline-icon {
+  color: #DD0000;
+}
+
+.color-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.4rem;
+  box-sizing: border-box;
+  border: none;
+}
+
+.color-option.selected {
+  border-color: #313131;
+  border-width: 0.2rem;
+  border-style: dashed;
+}
+
+.user-color {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.2rem;
 }

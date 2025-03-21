@@ -10,8 +10,8 @@ const config = {
     'OTHER'
   ],
 
-  // Inactive 
-  GRACE_PERIOD: 10000, // 30 * 60 * 1000
+  // Inactive for 30 minutes (in ms)
+  GRACE_PERIOD: 30 * 60 * 1000,
 
   // Single color highlight
   DEFAULT_COLOR: '#FFDC95',

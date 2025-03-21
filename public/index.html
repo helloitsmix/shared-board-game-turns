@@ -1,54 +1,139 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <!-- <link rel="shortcut icon" type="image/x-icon" href="./img/favicon.ico"> -->
-	<!-- <link rel="manifest" href="manifest.json"> -->
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <meta http-equiv='X-UA-Compatible' content='ie=edge'>
+  <!-- <link rel='shortcut icon' type='image/x-icon' href='./img/favicon.ico'> -->
+  <!-- <link rel='manifest' href='manifest.json'> -->
   <title>Shared Board Game Turns</title>
-	<link rel="stylesheet" type="text/css" href="style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" integrity="sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel='stylesheet' type='text/css' href='style.css'>
+  <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css'
+    integrity='sha512-SzlrxWUlpfuzQ+pcUCosxcglQRNAq/DZjVsC0lE40xsADsfeQoEypE+enwcOiGjk/bSuGGKHEyjSoQ1zVisanQ=='
+    crossorigin='anonymous' referrerpolicy='no-referrer' />
+  <link rel='preconnect' href='https://fonts.googleapis.com'>
+  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+  <link href='https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap' rel='stylesheet'>
 </head>
+
 <body>
 
-  <div class="container">
-
-    <div class="navbar">
-      <span class="title">HEROQUEST</span>
-      <div>
-        <i class="fa-solid fa-user"></i>
-        <span id="num-clients"></span>
+  <!-- MODAL MESSAGES -->
+  <div class='overlay' data-ui-type='modal' style='display: none;'>
+    <div class='modal'>
+      <div class='modal-message'>
+        <span data-render='modal-message'></span>
+      </div>
+      <div class='btn-menu-container'>
+        <button type='button' data-btn-action='close-modal'>
+          <!-- <i class='fa-solid fa-xmark'></i> -->
+          <span>Close</span>
+        </button>
       </div>
     </div>
-    <div id="error"></div>
+  </div>  
 
-    <div id="insert-player-container">
-      <div class="insert-player">
-        <input type="text" minlength="1" maxlength="10" class="insert-player-name" id="input-name" name="input-name" autofocus>
+  <!-- LOGIN -->
+  <div class='screen' data-screen-name='login'>
+    
+    <div class='navbar'></div>
+
+    <div class='inputs-container'>
+      <div class='input-container'>
+        <span>Room</span>
+        <select id='rooms-input' class='input'></select>
       </div>
-    </div>
-      
-    <div id="turn-list"></div>
-    <div id="connected-players"></div>
 
-    <div class="btn-menu-container">
-      <button type="button" class="pressable btn-menu" id="finish-turn">
-        <i class="fa-solid fa-turn-down"></i>
-        <span>Finisci turno</span>
-      </button>
-      <button type="button" class="pressable btn-menu" id="generate-turn">
-        <i class="fa-solid fa-repeat"></i>
-        <span>Genera turni</span>
-      </button>
+      <div class='input-container'>
+        <span>Username</span>
+        <input type='text'
+               class='input'
+               minlength='1'
+               maxlength='15'
+               id='username'
+               name='username'
+               placeholder='Enter your name'
+               autofocus
+        />
+      </div>
+
+      <div class='input-container' data-ui-type='color-picker' style='display: none;'>
+        <span>Color</span>
+        <div class='color-options' id='color-input'></div>
+      </div>
+
+      <label>
+        <input type='checkbox' id='admin'> Admin
+      </label>
     </div>
 
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='login'>
+        <i class='fa-solid fa-plug'></i>
+        <span>Connect</span>
+      </button>
+    </div>
   </div>
 
-  <script src="script.js"></script>
-  
+  <!-- ROOM -->
+  <div class='screen' data-screen-name='room' style='display: none;'>
+    <div class='navbar'>
+      <div class='navbar-container'>
+        <button type='button' data-btn-action='exit-turns'>
+          <i class='fa-solid fa-right-from-bracket' style='transform: scaleX(-1);'></i>
+        </button>
+        <span class='room-name' data-render='room-name'>Room</span>
+      </div>
+      <div class='navbar-container'>
+        <span data-render='room-users-count'></span>
+        <i class='fa-solid fa-user'></i>
+      </div>
+    </div>
+
+    <ul class='room-connected-users-list' data-render='room-connected-users'></ul>
+
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin' class='highlight'>
+        <i class='fa-solid fa-arrow-rotate-right'></i>
+        <span>Generate turns</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TURNS (UNIRE CON ROOM??) -->
+  <div class='screen' data-screen-name='turns' style='display: none;'>
+    <div class='navbar'>
+      <div class='navbar-container'>
+        <button type='button' data-btn-action='exit-turns'>
+          <i class='fa-solid fa-right-from-bracket' style='transform: scaleX(-1);'></i>
+        </button>
+        <span class='room-name' data-render='room-name'>Room</span>
+      </div>
+      <div class='navbar-container'>
+        <span data-render='room-users-count'></span>
+        <i class='fa-solid fa-user'></i>
+      </div>
+    </div>
+    
+    <ul class='room-connected-users-list' data-render='room-turns-list'></ul>
+
+    <div class='btn-menu-container'>
+      <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
+        <i class='fa-solid fa-arrow-left'></i>
+      </button>
+      <button type='button' data-btn-action='generate-turn' data-ui-type='admin' data-btn-type='icon-only'>
+        <i class='fa-solid fa-arrow-rotate-right'></i>
+      </button>
+      <button type='button' data-btn-action='finish-turn' data-ui-type='admin'>
+        <span>Finish turn</span>
+        <i class='fa-solid fa-arrow-right'></i>
+      </button>
+    </div>
+  </div>
+
+  <script src='script.js'></script>
+
 </body>
+
 </html>

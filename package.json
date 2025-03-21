@@ -1,7 +1,7 @@
 {
-  "name": "random-game-rounds",
+  "name": "shared-board-game-rounds",
   "version": "1.0.0",
-  "description": "",
+  "description": "A web-based real-time turn management application for board games using WebSockets and Express. Users can join different rooms, track connected players, and take turns. Admin users have additional control over the turn order.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
