@@ -8,6 +8,9 @@ let COLORS = []
 const WS_CLOSE_LOGOUT_CODE = 4001
 
 // Utility functions
+const createDeviceId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2)
+}
 const setTextContent = (selector, text = '') => {
   let elements = document.querySelectorAll(selector) || []
   elements.forEach(elem => elem.textContent = text)
@@ -50,6 +53,7 @@ const renderUsersList = (selector, users, currentIndex) => {
         <span class="username">${user.username}</span>
         <span class="icons-container">
           ${user.admin ? '<i class="fa-solid fa-crown admin-icon"></i>' : ''}
+          ${user.bot ? `<i class="fa-solid fa-robot" style="color: ${user.color};"></i>` : ''}
           <i class="fa-solid fa-wifi ${user.active ? 'status-online-icon' : 'status-offline-icon'}"></i>
         </span>
       </li>
@@ -115,7 +119,7 @@ fetch('/config')
 // Get the device ID or generate a new one
 let deviceId = localStorage.getItem('deviceId')
 if (!deviceId) {
-  deviceId = Date.now().toString(36) + Math.random().toString(36).substring(2)
+  deviceId = createDeviceId()
   localStorage.setItem('deviceId', deviceId)
 }
 
@@ -147,6 +151,18 @@ setOnClick('[data-btn-action="login"]', () => {
   localStorage.setItem('color', color)
   connect(username, admin, room, color)
 })
+setOnClick('[data-btn-action="add-player"]', () => {
+  let username = prompt('Insert username for the new player:')?.trim()
+  if (!username || username.length === 0) {
+    openModal('No username provided, action cancelled')
+    return
+  }
+  const player = {
+    deviceId: createDeviceId(),
+    username,
+  }
+  ws.send(JSON.stringify({ type: 'add-player', ...player }))
+})
 setOnClick('[data-btn-action="generate-turn"]', () => {
   ws.send(JSON.stringify({ type: 'generate-turn' }))
 })
@@ -156,7 +172,7 @@ setOnClick('[data-btn-action="finish-turn"]', () => {
 setOnClick('[data-btn-action="prev-turn"]', () => {
   ws.send(JSON.stringify({ type: 'prev-turn' }))
 })
-setOnClick('[data-btn-action="exit-turns"]', () => {
+setOnClick('[data-btn-action="logout"]', () => {
   ws.send(JSON.stringify({ type: 'logout' }))
   // ws.close()
 })
@@ -195,7 +211,7 @@ function connect(_username, _admin, _room, _color) {
       const { room, admin } = data
       setTextContent('[data-render="room-name"]', room)
       setProperty('[data-screen-name="login"]', 'display', 'none')
-      removeProperty('[data-screen-name="room"]', 'display', 'none')
+      // removeProperty('[data-screen-name="room"]', 'display', 'none')
       if (admin) {
         removeProperty('[data-ui-type="admin"]', 'display', 'none') 
       } else {
@@ -204,21 +220,22 @@ function connect(_username, _admin, _room, _color) {
     }
 
     // # Room update
-    if (MSG_TYPE === 'room-update') {
-      const { count, connectedUsers } = data
-      setTextContent('[data-render="room-users-count"]', count)
-      renderUsersList('[data-render="room-connected-users"]', connectedUsers)
+    // if (MSG_TYPE === 'room-update') {
+    //   const { count, connectedUsers } = data
+    //   setTextContent('[data-render="room-users-count"]', count)
+    //   renderUsersList('[data-render="room-connected-users"]', connectedUsers)
       
-      setProperty('[data-screen-name="login"]', 'display', 'none')
-      removeProperty('[data-screen-name="room"]', 'display', 'none')
-      setProperty('[data-screen-name="turns"]', 'display', 'none')
-    }
+    //   setProperty('[data-screen-name="login"]', 'display', 'none')
+    //   removeProperty('[data-screen-name="room"]', 'display', 'none')
+    //   setProperty('[data-screen-name="turns"]', 'display', 'none')
+    // }
 
     // # Turn update
     if (MSG_TYPE === 'turn-update') {
-      const { turnOrder, currentTurnIndex } = data
+      const { turnOrder, currentTurnIndex, count } = data
       const userTurn = turnOrder[currentTurnIndex]
-      setProperty('[data-screen-name="room"]', 'display', 'none')
+      setTextContent('[data-render="room-users-count"]', count)
+      // setProperty('[data-screen-name="room"]', 'display', 'none')
       removeProperty('[data-screen-name="turns"]', 'display', 'none')
       renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
 
@@ -241,9 +258,14 @@ function connect(_username, _admin, _room, _color) {
 
     // # User logout (login redirect)
     if (MSG_TYPE === 'logout-successful') {
-      setProperty('[data-screen-name="room"]', 'display', 'none')
+      // setProperty('[data-screen-name="room"]', 'display', 'none')
       setProperty('[data-screen-name="turns"]', 'display', 'none')
       removeProperty('[data-screen-name="login"]', 'display', 'none')
+    }
+
+    // # Add player successful
+    if (MSG_TYPE === 'add-player-successful') {
+      openModal(`Player added successfully`)
     }
   }
 

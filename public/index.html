@@ -77,10 +77,10 @@
   </div>
 
   <!-- ROOM -->
-  <div class='screen' data-screen-name='room' style='display: none;'>
+  <!-- <div class='screen' data-screen-name='room' style='display: none;'>
     <div class='navbar'>
       <div class='navbar-container'>
-        <button type='button' data-btn-action='exit-turns'>
+        <button type='button' data-btn-action='logout'>
           <i class='fa-solid fa-right-from-bracket' style='transform: scaleX(-1);'></i>
         </button>
         <span class='room-name' data-render='room-name'>Room</span>
@@ -99,13 +99,13 @@
         <span>Generate turns</span>
       </button>
     </div>
-  </div>
+  </div> -->
 
-  <!-- TURNS (UNIRE CON ROOM??) -->
+  <!-- TURNS -->
   <div class='screen' data-screen-name='turns' style='display: none;'>
     <div class='navbar'>
       <div class='navbar-container'>
-        <button type='button' data-btn-action='exit-turns'>
+        <button type='button' data-btn-action='logout'>
           <i class='fa-solid fa-right-from-bracket' style='transform: scaleX(-1);'></i>
         </button>
         <span class='room-name' data-render='room-name'>Room</span>
@@ -118,6 +118,12 @@
     
     <ul class='room-connected-users-list' data-render='room-turns-list'></ul>
 
+    <div class='btn-menu-container' style='margin-bottom: 0;'>
+      <button type='button' data-btn-action='add-player' data-ui-type='admin'>
+        <i class='fa-solid fa-user'></i>
+        <span>Add bot</span>
+      </button>
+    </div>
     <div class='btn-menu-container'>
       <button type='button' data-btn-action='prev-turn' data-ui-type='admin'>
         <i class='fa-solid fa-arrow-left'></i>

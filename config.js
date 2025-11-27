@@ -14,7 +14,7 @@ const config = {
   GRACE_PERIOD: 30 * 60 * 1000,
 
   // Single color highlight
-  DEFAULT_COLOR: '#FFDC95',
+  DEFAULT_COLOR: '#FFE9BD',
 
   // Multi color highlight user choice
   USE_COLORS: true,
@@ -32,7 +32,10 @@ const config = {
     '#A44CAB', // Indigo
     '#8B00FF', // Tha supreme purple
     '#D5A6BD'  // Dusty Rose
-  ]
+  ],
+
+  // Bot color
+  BOT_COLOR: '#AAAAAA' // Light gray
 }
 
 module.exports = config
