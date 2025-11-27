@@ -105,10 +105,14 @@ Users can join predefined rooms. You can customize the room names in the `config
 
 ---
 
+## Troubleshooting
+
+- The application is designed for use on a local network. Devices must be connected to the same network as the server.
+- If you are unable to connect to the server, ensure that your device is on the same network as the server.
+- If the issue persists, try disabling any active VPN or firewall that might be blocking the connection.
+
 ## Notes
 
 - Ensure there is at least one admin in a room to generate the turn order.
-- The application is designed for use on a local network. Devices must be connected to the same network as the server.
-- The `config.js` file is the only file you need to modify to customize the application settings.
-- If you are unable to connect to the server, ensure that your device is on the same network as the server.
-- If the issue persists, try disabling any active VPN or firewall that might be blocking the connection.
+- The `config.js` file is the only file you need to modify to customize the application settings. If the config.js file is modified, the server must be restarted (with command: node server.js).
+- You can create "ghost" players (fake players) by extending the grace period and joining the application using an incognito browser session.
