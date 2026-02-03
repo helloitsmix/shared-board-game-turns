@@ -23,8 +23,7 @@ const getRoomState = (room = '') => {
   if (!rooms.has(room)) {
     rooms.set(room, {
       turnOrder: [],
-      currentTurnIndex: 0,
-      // turnsGenerated: true
+      currentTurnIndex: 0
     })
   }
   return rooms.get(room)
@@ -74,16 +73,13 @@ wss.on('connection', function connection(ws) {
 
         // broadcast user login success
         broadcastLoginSuccessful(data.deviceId)
-        // broadcast the room the user joined
-        // broadcastUpdateRoom(data.room)
+
         // broadcast the turn order if turns are already generated
         let roomState = getRoomState(data.room)
-        // if (roomState.turnsGenerated) {
         if (!roomState.turnOrder.includes(data.deviceId)) {
           roomState.turnOrder.push(data.deviceId)
         }
         broadcastTurnOrder(data.room)
-        // }
       }
 
       if (data.type === 'add-player') {
@@ -97,12 +93,31 @@ wss.on('connection', function connection(ws) {
           room: user.room,
           color: CONFIG.BOT_COLOR,
           active: true,
-          timeout: null
+          timeout: null,
+          ws: null
         })
 
         let roomState = getRoomState(user.room)
         roomState.turnOrder.push(data.deviceId)
         broadcastTurnOrder(user.room)
+        clientSend(user.ws, { type: 'add-player-successful' })
+      }
+
+      if (data.type === 'remove-player') {
+        const user = getUser(ws.deviceId) ?? {}
+        if (!user.admin) return
+        const room = user.room
+
+        if (users.has(data.deviceId)) {
+          const removedUser = users.get(data.deviceId)
+          users.delete(data.deviceId)
+          removeDeviceFromTurnOrder(room, data.deviceId)
+
+          clientSend(user.ws, { type: 'remove-player-successful' })
+          if (removedUser.ws) {
+            clientSend(removedUser.ws, { type: 'removed-player-successful' })
+          }
+        }
       }
 
       // # Generate turns order
@@ -117,7 +132,6 @@ wss.on('connection', function connection(ws) {
             roomUsers.push(deviceId)
           }
         })
-        // roomState.turnsGenerated = true
         roomState.currentTurnIndex = 0
         roomState.turnOrder = shuffle(roomUsers)
         broadcastTurnOrder(room)
@@ -166,35 +180,12 @@ wss.on('connection', function connection(ws) {
 
       // Broadcast change of "active" status in either room or turn order
       user.active = false
-      // if (roomState.turnsGenerated) {
-        broadcastTurnOrder(user.room)
-      // }
-      // else {
-      //   broadcastUpdateRoom(user.room)
-      // }
+      broadcastTurnOrder(user.room)
 
-      // Set a timer for the user permanent removal
-      // ! MOVE TO A FN TO USE ALSO ON REMOVE PLAYER BY ADMIN
+      // Set a timer for the user permanent removal after the grace period
       user.timeout = setTimeout(() => {
         users.delete(ws.deviceId)
-        // if (roomState.turnsGenerated) {
-          // Remove user turn from the turn order
-          const index = roomState.turnOrder.indexOf(ws.deviceId)
-          if (index !== -1) {
-            roomState.turnOrder.splice(index, 1)
-            if (index < roomState.currentTurnIndex) {
-              roomState.currentTurnIndex--
-            } else if (index === roomState.currentTurnIndex) {
-              if (roomState.currentTurnIndex >= roomState.turnOrder.length) {
-                roomState.currentTurnIndex = roomState.turnOrder.length
-              }
-            }
-            broadcastTurnOrder(user.room)
-          }
-        // }
-        //  else {
-        //   broadcastUpdateRoom(user.room)
-        // }
+        removeDeviceFromTurnOrder(user.room, ws.deviceId)
       }, CONFIG.GRACE_PERIOD)
     }
   })
@@ -223,36 +214,9 @@ const broadcastLogoutSuccessful = (deviceId) => {
   }
 }
 
-// Broadcast the room update to all clients in the room
-// const broadcastUpdateRoom = (room) => {
-//   const usersInRoom = []
-//   users.forEach((user, deviceId) => {
-//     if (user.room === room) {
-//       usersInRoom.push({
-//         deviceId,
-//         username: user.username,
-//         admin: user.admin,
-//         active: user.active,
-//         color: user.color
-//       })
-//     }
-//   })
-//   wss.clients.forEach(client => {
-//     const clientState = getUser(client?.deviceId) ?? {}
-//     if (client.readyState === WebSocket.OPEN && clientState.room === room) {
-//       clientSend(client, {
-//         type: 'room-update',
-//         connectedUsers: usersInRoom,
-//         count: usersInRoom.length
-//       })
-//     }
-//   })
-// }
-
 // Broadcast the turn order to all clients in the room
 const broadcastTurnOrder = (room) => {
   let roomState = getRoomState(room)
-  // if (!roomState.turnsGenerated) return
   const turnOrderData = roomState.turnOrder.reduce((prev, deviceId) => {
     const user = getUser(deviceId)
     if (!user || user.room !== room) return prev
@@ -278,6 +242,23 @@ const broadcastTurnOrder = (room) => {
   })
 }
 
+// Remove a device from the room's turn order and adjust currentTurnIndex
+const removeDeviceFromTurnOrder = (room, deviceId) => {
+  const roomState = getRoomState(room)
+  const index = roomState.turnOrder.indexOf(deviceId)
+  if (index !== -1) {
+    roomState.turnOrder.splice(index, 1)
+    if (index < roomState.currentTurnIndex) {
+      roomState.currentTurnIndex--
+    } else if (index === roomState.currentTurnIndex) {
+      if (roomState.currentTurnIndex >= roomState.turnOrder.length) {
+        roomState.currentTurnIndex = roomState.turnOrder.length
+      }
+    }
+    broadcastTurnOrder(room)
+  }
+}
+
 // Stringify and send a message to a client
 const clientSend = (client, msg) => {
   let message = JSON.stringify(msg)
@@ -296,5 +277,5 @@ const shuffle = (array) => {
 }
 
 server.listen(CONFIG.PORT, CONFIG.IP, function () {
-  console.log(`Server listening on http://${CONFIG.IP}:${CONFIG.PORT}`)
+  console.info(`Server listening on http://${CONFIG.IP}:${CONFIG.PORT}`)
 })

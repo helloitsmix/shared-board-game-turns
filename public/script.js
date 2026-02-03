@@ -60,6 +60,16 @@ const renderUsersList = (selector, users, currentIndex) => {
     `)
   })
   renderContainer.innerHTML = list.join('')
+  
+  // Add click handler to each <li>
+  renderContainer.querySelectorAll('li').forEach((li, index) => {
+    if (users[index].admin || adminCheckbox.checked !== true) return // skip admins
+    li.onclick = () => {
+      if (confirm(`Remove player ${users[index].username}?`)) {
+        ws.send(JSON.stringify({ type: 'remove-player', deviceId: users[index].deviceId }))
+      }
+    }
+  })
 }
 
 // Fetch the configuration (IP, PORT, ROOMS)
@@ -211,7 +221,6 @@ function connect(_username, _admin, _room, _color) {
       const { room, admin } = data
       setTextContent('[data-render="room-name"]', room)
       setProperty('[data-screen-name="login"]', 'display', 'none')
-      // removeProperty('[data-screen-name="room"]', 'display', 'none')
       if (admin) {
         removeProperty('[data-ui-type="admin"]', 'display', 'none') 
       } else {
@@ -219,23 +228,11 @@ function connect(_username, _admin, _room, _color) {
       }
     }
 
-    // # Room update
-    // if (MSG_TYPE === 'room-update') {
-    //   const { count, connectedUsers } = data
-    //   setTextContent('[data-render="room-users-count"]', count)
-    //   renderUsersList('[data-render="room-connected-users"]', connectedUsers)
-      
-    //   setProperty('[data-screen-name="login"]', 'display', 'none')
-    //   removeProperty('[data-screen-name="room"]', 'display', 'none')
-    //   setProperty('[data-screen-name="turns"]', 'display', 'none')
-    // }
-
     // # Turn update
     if (MSG_TYPE === 'turn-update') {
       const { turnOrder, currentTurnIndex, count } = data
       const userTurn = turnOrder[currentTurnIndex]
       setTextContent('[data-render="room-users-count"]', count)
-      // setProperty('[data-screen-name="room"]', 'display', 'none')
       removeProperty('[data-screen-name="turns"]', 'display', 'none')
       renderUsersList('[data-render="room-turns-list"]', turnOrder, currentTurnIndex)
 
@@ -258,7 +255,6 @@ function connect(_username, _admin, _room, _color) {
 
     // # User logout (login redirect)
     if (MSG_TYPE === 'logout-successful') {
-      // setProperty('[data-screen-name="room"]', 'display', 'none')
       setProperty('[data-screen-name="turns"]', 'display', 'none')
       removeProperty('[data-screen-name="login"]', 'display', 'none')
     }
@@ -267,13 +263,25 @@ function connect(_username, _admin, _room, _color) {
     if (MSG_TYPE === 'add-player-successful') {
       openModal(`Player added successfully`)
     }
+
+    // # Remove player successful
+    if (MSG_TYPE === 'remove-player-successful') {
+      openModal(`Player removed successfully`)
+    }
+
+    // # Removed player successfully
+    if (MSG_TYPE === 'removed-player-successful') {
+      setProperty('[data-screen-name="turns"]', 'display', 'none')
+      removeProperty('[data-screen-name="login"]', 'display', 'none')
+      openModal(`You have been removed`)
+    }
   }
 
   // # Websocket close
   ws.onclose = function (e) {
     // Logout from the server
     if (e.code === WS_CLOSE_LOGOUT_CODE) {
-      console.log('Logout successful')
+      console.info('Logout successful')
       return
     } else {
       // Show a modal with the reason of the disconnection and attempt to reconnect
@@ -286,7 +294,7 @@ function connect(_username, _admin, _room, _color) {
 
   // # Error handling
   ws.onerror = function (error) {
-    console.log('WebSocket error:', error)
+    console.error('WebSocket error:', error)
     let message = typeof error === 'object' ? JSON.stringify(error) : error
     openModal(`WebSocket error: ${message}`)
   }
