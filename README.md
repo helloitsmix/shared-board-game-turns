@@ -55,6 +55,7 @@ Edit the `config.js` file to set up the application parameters:
 - **USE_COLORS**: Set to `true` to allow users to choose their own colors from the `COLORS` list.
 - **COLORS**: Define the available colors for users to choose from.
 - **GRACE_PERIOD**: The time (in milliseconds) a disconnected user remains in the system before being removed (default is `30 minutes`).
+- **BOT_COLOR**: The color assigned to bots in the game.
 
 Example `config.js`:
 ```javascript
@@ -65,7 +66,8 @@ const config = {
   GRACE_PERIOD: 30 * 60 * 1000,
   DEFAULT_COLOR: '#FFDC95',
   USE_COLORS: true,
-  COLORS: ['#999999', '#D72638', '#F57C00']
+  COLORS: ['#999999', '#D72638', '#F57C00'],
+  BOT_COLOR: '#AAAAAA'
 };
 module.exports = config;
 ```
@@ -88,6 +90,8 @@ Users can join predefined rooms. You can customize the room names in the `config
 - **Admins**:  
   - Admin users can generate the turn order for a room.  
   - Admins can control all turns, including advancing, going back to the previous turn, or regenerating the turn order.
+  - Admins can add bots to a room.
+  - Admins can remove other players or bots from a room.
 - **Regular Users**:  
   - Users can only advance the turn when it is their turn.
 
@@ -115,4 +119,3 @@ Users can join predefined rooms. You can customize the room names in the `config
 
 - Ensure there is at least one admin in a room to generate the turn order.
 - The `config.js` file is the only file you need to modify to customize the application settings. If the config.js file is modified, the server must be restarted (with command: node server.js).
-- You can create "ghost" players (fake players) by extending the grace period and joining the application using an incognito browser session.
